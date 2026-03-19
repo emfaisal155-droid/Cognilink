@@ -8,7 +8,7 @@ By automatically extracting key concepts and identifying meaningful relationship
 - Eman Faisal 24L-2514
 - Ammara Saleem 24L-2571
 - Farwa Batool Naqvi 24L-2508
-- 
+  
 ## Tech Stack
 - Backend: C# ASP.NET Core
 - Frontend: React 
@@ -16,7 +16,7 @@ By automatically extracting key concepts and identifying meaningful relationship
   
 ## How to Run
 ### Backend
-cd backend
+
 
 ### Frontend
 ```

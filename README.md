@@ -18,8 +18,8 @@ By automatically extracting key concepts and identifying meaningful relationship
 ### Backend
 cd backend
 
-```
 ### Frontend
+```
 cd frontend 
 npm install
 npm run dev

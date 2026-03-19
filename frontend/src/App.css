@@ -1,0 +1,552 @@
+/* src/App.css */
+
+/* 1. Global Reset */
+.app-container {
+  font-family: 'Segoe UI', sans-serif;
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: #ffffff;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden; /* Prevents unwanted horizontal scrolling */
+}
+
+/* 2. Navbar Fix - Spreads items across the full width */
+.navbar {
+  display: flex;
+  justify-content: space-between; 
+  align-items: center;
+  padding: 1rem 4rem; 
+  border-bottom: 1px solid #000;
+  background: white;
+  width: 100%;
+  box-sizing: border-box; 
+}
+
+.nav-links {
+  display: flex;
+  gap: 30px; /* Space between Blog, Use Cases, etc. */
+}
+
+.nav-links span {
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 0.9rem;
+}
+
+/* 3. Main Content Fix - Forces the 2-column split */
+.main-content {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr; 
+  flex-grow: 1;
+  width: 100%;
+  padding: 0 60px;
+  align-items: center;
+  background-color: #ffffff;
+  box-sizing: border-box;
+}
+
+/* 4. Diagram Section (Left Side) */
+.diagram-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+/* KEEPING YOUR ANIMATIONS */
+.diagram-section svg {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+  100% { transform: translateY(0px); }
+}
+
+/* 5. Form Section (Right Side) */
+.form-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.form-box {
+  border: 1px solid #000;
+  padding: 40px;
+  width: 360px;
+  text-align: center;
+  background-color: #ffffff;
+  box-shadow: 10px 10px 0px rgba(0, 0, 0, 0.05);
+}
+
+/* Dashboard Layout */
+.dashboard-container {
+  display: flex;
+  height: calc(100vh - 70px); /* Adjust based on your Navbar height */
+  background-color: #f4f4f4;
+}
+
+/* Primary Sidebar (Far Left) */
+.side-menu {
+  width: 180px;
+  background: #ffffff;
+  border-right: 1px solid #ddd;
+  padding: 20px 0;
+}
+
+.side-menu h3 {
+  padding: 0 20px;
+  font-size: 1rem;
+  color: #666;
+}
+
+.side-menu ul {
+  list-style: none;
+  padding: 0;
+}
+
+.side-menu li {
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.side-menu li.active {
+  background: #f0f0f0;
+  border-right: 4px solid #D35400;
+  font-weight: bold;
+}
+
+/* Document Sidebar (Middle) */
+.doc-sidebar {
+  width: 220px;
+  background: #ffffff;
+  border-right: 1px solid #ddd;
+  display: flex;
+  flex-direction: column;
+}
+
+.doc-section {
+  padding: 15px;
+}
+
+.orange-bg {
+  background-color: #D35400;
+  color: white;
+  flex-grow: 1;
+}
+
+.section-label {
+  font-weight: bold;
+  margin-bottom: 15px;
+  border-bottom: 1px solid rgba(255,255,255,0.3);
+  padding-bottom: 5px;
+}
+
+.nav-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 1px solid #000;
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  background: white;
+  color: black;
+}
+
+.active-doc {
+  background: #fff;
+  font-weight: bold;
+  box-shadow: 4px 4px 0px #000;
+}
+
+/* Main Workspace (Right) */
+.workspace {
+  flex-grow: 1;
+  padding: 40px;
+  background: white;
+  overflow-y: auto;
+}
+
+.workspace-header h2 {
+  font-size: 2rem;
+  margin-bottom: 30px;
+}
+
+.summary-card {
+  border: 1px solid #000;
+  max-width: 600px;
+  padding: 40px;
+  background: #fff;
+}
+
+.stat-line {
+  padding: 12px;
+  border: 1px solid #ccc;
+  margin-bottom: 10px;
+  background: #fafafa;
+}
+
+.dimmed { color: #888; font-size: 0.9rem; }
+
+.action-grid {
+  margin-top: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.action-btn {
+  padding: 12px;
+  border: 1px solid #000;
+  background: white;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.2s;
+}
+
+.action-btn:hover {
+  background: #000;
+  color: #fff;
+}
+
+.action-btn.secondary {
+  border-style: dashed;
+}
+
+/* Note Editor Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5); /* Dim the background */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.editor-box {
+  background: white;
+  width: 500px;
+  border: 2px solid #000;
+  box-shadow: 10px 10px 0px #000;
+  padding: 30px;
+}
+
+.editor-header {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid #000;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+}
+
+.close-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; }
+
+.editor-input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 20px;
+  border: 1px solid #000;
+  box-sizing: border-box;
+}
+
+.editor-textarea {
+  width: 100%;
+  height: 200px;
+  padding: 12px;
+  border: 1px solid #000;
+  box-sizing: border-box;
+  font-family: inherit;
+  resize: none;
+}
+
+.editor-footer {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+.save-btn {
+  flex: 1;
+  background: #D35400;
+  color: white;
+  padding: 12px;
+  border: 1px solid #000;
+  cursor: pointer;
+}
+
+.discard-btn {
+  padding: 12px 20px;
+  background: white;
+  border: 1px solid #000;
+  cursor: pointer;
+}
+
+.search-input-container {
+  padding-bottom: 15px;
+}
+
+.search-field {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #000;
+  font-family: inherit;
+  box-sizing: border-box; /* Crucial for width alignment */
+  background: #fff;
+}
+
+.search-field:focus {
+  border-color: #D35400;
+  outline: none;
+}
+
+.note-list-item {
+  padding: 16px 0;
+  border-bottom: 1px dashed #ccc;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.note-item-header {
+  display: flex;
+  justify-content: space-between;
+}
+
+.note-item-title {
+  font-weight: 700;
+  color: #000;
+}
+
+.note-item-description {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #666;
+  /* Truncate text after 2 lines */
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* The vendor prefix version */
+  line-clamp: 2;         /* The standard version (fixes the warning) */
+  -webkit-box-orient: vertical;  
+  overflow: hidden;
+}
+/* RESPONSIVE DESIGN: Tablet & Mobile */
+/* Update the existing media query block */
+@media (max-width: 1024px) {
+  /* 1. Fix the Top Navbar */
+  .navbar {
+    flex-direction: column; /* Stack logo and links */
+    height: auto;
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .nav-links {
+    display: none; /* Usually, on mobile, we hide these or move them to a menu */
+    /* Alternatively, if you want them visible but neat: */
+    /* display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; */
+  }
+
+  /* 2. Fix the Dashboard Layout */
+  .dashboard-container {
+    flex-direction: column;
+    height: auto;
+    overflow-x: hidden; /* Prevent horizontal scrolling */
+  }
+
+  .side-menu, .doc-sidebar {
+    width: 100% !important;
+    position: relative;
+    border-right: none;
+    border-bottom: 1px solid #ddd;
+  }
+
+  .workspace {
+    width: 100%;
+    padding: 15px;
+  }
+
+  /* 3. Scale down the summary card */
+  .summary-card {
+    padding: 15px;
+  }
+  
+  .action-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+}
+/* Extra Small Screens (Phones) */
+@media (max-width: 600px) {
+  .workspace-header h2 {
+    font-size: 1.2rem;
+  }
+
+  .stats-container {
+    display: block; /* Stack Total Notes/Concepts */
+  }
+
+  .stat-line {
+    margin-bottom: 10px;
+  }
+  
+  .editor-box {
+    width: 90%; /* Modal takes up more screen on phones */
+    padding: 15px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .side-menu ul {
+    display: flex; /* Make the menu items sit side-by-side */
+    overflow-x: auto; /* Allow scrolling if there are many */
+    padding: 10px 0;
+  }
+  
+  .side-menu li {
+    white-space: nowrap;
+    margin: 0 10px;
+    padding: 5px 10px;
+  }
+}
+
+/* Make the pencil emoji grow slightly on hover */
+.note-item-title:hover {
+  color: #D35400; /* CogniLink Orange */
+  text-decoration: underline;
+}
+
+/* Updated Delete button styling */
+.delete-icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  opacity: 0.5;
+  transition: all 0.2s ease-in-out;
+}
+
+.delete-icon-btn:hover {
+  opacity: 1;
+  transform: scale(1.2);
+  color: #e74c3c; /* Red for delete */
+}
+
+/* Layout for the header and actions */
+.workspace-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 30px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+}
+
+/* Minimalist Stats */
+.status-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.stat-badge {
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.sync-status {
+  font-size: 0.75rem;
+  color: #27ae60; /* Green for active */
+  font-weight: 500;
+}
+
+/* The New 'Add Note' Button */
+.add-note-btn {
+  background-color: #D35400;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 50px; /* Pill shape */
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 10px rgba(211, 84, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+.add-note-btn:hover {
+  background-color: #A04000;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(211, 84, 0, 0.3);
+}
+
+.plus-icon {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.empty-state {
+  padding: 40px 0;
+  color: #aaa;
+  font-style: italic;
+  text-align: center;
+}
+
+/* Container for the buttons at the bottom */
+.editor-actions {
+  display: flex;
+  justify-content: flex-end; /* Pushes buttons to the right */
+  gap: 12px;                 /* Adds space between the buttons */
+  margin-top: 25px;          /* Space between the textarea and buttons */
+}
+
+/* Base button styling */
+.editor-btn {
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid #000;
+}
+
+/* Specific "Save Note" style */
+.save-btn {
+  background-color: #D35400; /* Matching your orange theme */
+  color: white;
+  border: none;
+}
+
+.save-btn:hover {
+  background-color: #A04000;
+  transform: translateY(-1px);
+}
+
+/* Specific "Cancel" style */
+.cancel-btn {
+  background-color: #fff;
+  color: #333;
+}
+
+.cancel-btn:hover {
+  background-color: #f5f5f5;
+  border-color: #D35400;
+}

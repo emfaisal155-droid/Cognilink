@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import ConceptDiagram from '../../components/conceptDiagram';
+import ConceptDiagram from '../../components/ConceptDiagram';
 
 export default function Signup() {
   const [formData, setFormData] = useState({

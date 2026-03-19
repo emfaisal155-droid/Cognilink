@@ -63,17 +63,14 @@ export default function Dashboard() {
     setIsEditorOpen(true);
   };
 
-  // --- THE CRITICAL FIX ---
-  // We calculate this EVERY render. When setSearchTerm runs, React re-renders. 
-  // On that re-render, searchTerm is 'A', and this filter runs IMMEDIATELY.
   const lowerSearch = searchTerm.toLowerCase().trim();
   const filteredNotes = notes.filter(note => {
     const matchesView = view === 'trash' ? note.deleted : !note.deleted;
     
-    // If no search, just show the view
+
     if (!lowerSearch) return matchesView;
 
-    // Direct string check
+    
     const titleMatch = (note.title || "").toLowerCase().includes(lowerSearch);
     const contentMatch = (note.content || "").toLowerCase().includes(lowerSearch);
     
@@ -105,7 +102,7 @@ export default function Dashboard() {
             placeholder="Search notes..." 
             className="search-field"
             value={searchTerm}
-            // Logic: Update state. This triggers a re-render where filteredNotes is re-calculated.
+            
             onChange={(e) => setSearchTerm(e.target.value)} 
             autoFocus
           />

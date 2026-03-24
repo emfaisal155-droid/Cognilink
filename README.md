@@ -25,10 +25,10 @@ By automatically extracting key concepts and identifying meaningful relationship
 
 ### API Endpoints
 **Authentication:**
--POST /api/account/register-Register new user
--POST /api/account/login-Login with cerendentials
+1.POST /api/account/register-Register new user
+2.POST /api/account/login-Login with cerendentials
 
-**Ntes:**
+**Notes:**
 -POST /api/notes -Create a note
 -GET /api/notes{username} -Get all notes
 -PUT /api/notes/{id} -Update a note

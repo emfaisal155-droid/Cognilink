@@ -6,147 +6,93 @@ export default function Dashboard() {
   const [editNote, setEditNote] = useState(null); 
   const [searchTerm, setSearchTerm] = useState('');
   const [view, setView] = useState('active'); 
+  const [notes, setNotes] = useState([]);
 
- // const [notes, setNotes] = useState(() => {
-   // const saved = localStorage.getItem('cognilink_notes');
-    //return saved ? JSON.parse(saved) : [
-      //{ id: 1, title: 'Neural Networks Architecture', content: 'Deep dive into CNNs and RNNs.', date: '02:30 PM', deleted: false },
-      //{ id: 2, title: 'SQL Database Schema', content: 'Designing the relational model for the project.', date: '11:15 AM', deleted: false }
-    //];
-  //});
+  // 1. Load Notes from Backend on startup
+  useEffect(() => {
+    const fetchNotes = async () => {
+      const user = localStorage.getItem('username'); 
+      if (!user) return;
 
- // useEffect(() => {
-   // localStorage.setItem('cognilink_notes', JSON.stringify(notes));
- // }, [notes]);
-
-  // Replace lines 10-17 with:
-/*const [notes, setNotes] = useState([]);
-
-// Add this useEffect to load notes from the backend on startup
-useEffect(() => {
-  const fetchNotes = async () => {
-    try {
-      const response = await fetch('http://localhost:7174/api/notes');
-      const data = await response.json();
-      setNotes(data);
-    } catch (err) {
-      console.error("Failed to fetch notes:", err);
-    }
-  };
-  fetchNotes();
-}, []);
+      try {
+        const response = await fetch(`http://localhost:7174/api/notes/${user}`);
+        if (response.ok) {
+          const data = await response.json();
+          setNotes(data);
+        }
+      } catch (err) {
+        console.error("Connection failed:", err);
+      }
+    };
+    fetchNotes();
+  }, []);
 
   const getCurrentTime = () => {
     return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  const handleSaveNote = (savedNote) => {
+  // 2. Save or Update Note in DB
+  const handleSaveNote = async (savedNote) => {
+    const isEditing = !!editNote;
+    const user = localStorage.getItem('username');
     const timestamp = getCurrentTime();
-    if (editNote) {
-      const hasChanged = editNote.title !== savedNote.title || editNote.content !== savedNote.content;
-      setNotes(notes.map(n => n.id === savedNote.id ? { 
-        ...savedNote, 
-        date: hasChanged ? timestamp : n.date, 
-        deleted: false 
-      } : n));
-    } else {
-      setNotes([{ ...savedNote, id: Date.now(), date: timestamp, deleted: false }, ...notes]);
+    
+    const url = isEditing 
+      ? `http://localhost:7174/api/notes/${savedNote.id}` 
+      : `http://localhost:7174/api/notes`;
+
+    try {
+      const response = await fetch(url, {
+        method: isEditing ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...savedNote,
+          username: user,
+          date: timestamp,
+          deleted: false
+        })
+      });
+
+      if (response.ok) {
+        // Refresh notes from server to ensure UI is in sync with DB
+        const res = await fetch(`http://localhost:7174/api/notes/${user}`);
+        const data = await res.json();
+        setNotes(data);
+      }
+    } catch (err) {
+      console.error("Save failed:", err);
     }
     setEditNote(null);
     setIsEditorOpen(false);
   };
 
-  const handleDelete = (e, id) => {
-    e.stopPropagation(); 
+  // 3. Delete Note from DB
+  const handleDelete = async (e, id) => {
+    e.stopPropagation();
+    const user = localStorage.getItem('username');
     const message = view === 'trash' ? "Permanently delete this note?" : "Move this note to Trash?";
+    
     if (window.confirm(message)) {
-      if (view === 'trash') {
-        setNotes(notes.filter(note => note.id !== id));
-      } else {
-        setNotes(notes.map(n => n.id === id ? { ...n, deleted: true } : n));
+      try {
+        // If your backend handles soft delete, this might be a PUT. 
+        // Following standard API logic, we use DELETE:
+        const response = await fetch(`http://localhost:7174/api/notes/${id}`, {
+          method: 'DELETE'
+        });
+
+        if (response.ok) {
+          setNotes(notes.filter(n => n.id !== id));
+        }
+      } catch (err) {
+        console.error("Delete failed:", err);
       }
-    }
-  };*/
-
-  // 1. Initial State (Lines 10-16 in your original)
-const [notes, setNotes] = useState([]);
-
-// 2. Fetching Notes (GET /api/notes/{username})
-useEffect(() => {
-  const fetchNotes = async () => {
-    const user = localStorage.getItem('username'); 
-    if (!user) return;
-
-    try {
-      const response = await fetch(`http://localhost:7174/api/notes/${user}`);
-      if (response.ok) {
-        const data = await response.json();
-        setNotes(data);
-      }
-    } catch (err) {
-      console.error("Connection failed:", err);
     }
   };
-  fetchNotes();
-}, []);
-
-// 3. Saving/Updating (POST /api/notes or PUT /api/notes/{id})
-const handleSaveNote = async (savedNote) => {
-  const isEditing = !!editNote;
-  const user = localStorage.getItem('username');
-  
-  const url = isEditing 
-    ? `http://localhost:7174/api/notes/${savedNote.id}` 
-    : `http://localhost:7174/api/notes`;
-
-  try {
-    const response = await fetch(url, {
-      method: isEditing ? 'PUT' : 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...savedNote,
-        username: user,
-        date: getCurrentTime() // Keep your existing time format
-      })
-    });
-
-    if (response.ok) {
-      // Re-fetch to keep the UI perfectly synced with the DB
-      const res = await fetch(`http://localhost:7174/api/notes/${user}`);
-      const data = await res.json();
-      setNotes(data);
-    }
-  } catch (err) {
-    console.error("Save failed:", err);
-  }
-  setEditNote(null);
-  setIsEditorOpen(false);
-};
-
-// 4. Deleting (DELETE /api/notes/{id})
-const handleDelete = async (e, id) => {
-  e.stopPropagation();
-  const message = view === 'trash' ? "Permanently delete?" : "Move to Trash?";
-  
-  if (window.confirm(message)) {
-    try {
-      // NOTE: If your DB implementation doesn't have a "Trash" state yet,
-      // this DELETE will remove it permanently. 
-      const response = await fetch(`http://localhost:7174/api/notes/${id}`, {
-        method: 'DELETE'
-      });
-
-      if (response.ok) {
-        setNotes(notes.filter(n => n.id !== id));
-      }
-    } catch (err) {
-      console.error("Delete failed:", err);
-    }
-  }
-};
 
   const restoreNote = (e, id) => {
     e.stopPropagation();
+    // Local update for immediate feedback; 
+    // Ideally, this should also be a PUT call to the backend to set deleted: false
     setNotes(notes.map(n => n.id === id ? { ...n, deleted: false } : n));
     setView('active');
   };
@@ -160,11 +106,9 @@ const handleDelete = async (e, id) => {
   const lowerSearch = searchTerm.toLowerCase().trim();
   const filteredNotes = notes.filter(note => {
     const matchesView = view === 'trash' ? note.deleted : !note.deleted;
-    
 
     if (!lowerSearch) return matchesView;
 
-    
     const titleMatch = (note.title || "").toLowerCase().includes(lowerSearch);
     const contentMatch = (note.content || "").toLowerCase().includes(lowerSearch);
     
@@ -196,7 +140,6 @@ const handleDelete = async (e, id) => {
             placeholder="Search notes..." 
             className="search-field"
             value={searchTerm}
-            
             onChange={(e) => setSearchTerm(e.target.value)} 
             autoFocus
           />

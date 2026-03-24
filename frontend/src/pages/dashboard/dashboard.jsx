@@ -7,17 +7,34 @@ export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [view, setView] = useState('active'); 
 
-  const [notes, setNotes] = useState(() => {
-    const saved = localStorage.getItem('cognilink_notes');
-    return saved ? JSON.parse(saved) : [
-      { id: 1, title: 'Neural Networks Architecture', content: 'Deep dive into CNNs and RNNs.', date: '02:30 PM', deleted: false },
-      { id: 2, title: 'SQL Database Schema', content: 'Designing the relational model for the project.', date: '11:15 AM', deleted: false }
-    ];
-  });
+ // const [notes, setNotes] = useState(() => {
+   // const saved = localStorage.getItem('cognilink_notes');
+    //return saved ? JSON.parse(saved) : [
+      //{ id: 1, title: 'Neural Networks Architecture', content: 'Deep dive into CNNs and RNNs.', date: '02:30 PM', deleted: false },
+      //{ id: 2, title: 'SQL Database Schema', content: 'Designing the relational model for the project.', date: '11:15 AM', deleted: false }
+    //];
+  //});
 
-  useEffect(() => {
-    localStorage.setItem('cognilink_notes', JSON.stringify(notes));
-  }, [notes]);
+ // useEffect(() => {
+   // localStorage.setItem('cognilink_notes', JSON.stringify(notes));
+ // }, [notes]);
+
+  // Replace lines 10-17 with:
+const [notes, setNotes] = useState([]);
+
+// Add this useEffect to load notes from the backend on startup
+useEffect(() => {
+  const fetchNotes = async () => {
+    try {
+      const response = await fetch('http://localhost:7174/api/notes');
+      const data = await response.json();
+      setNotes(data);
+    } catch (err) {
+      console.error("Failed to fetch notes:", err);
+    }
+  };
+  fetchNotes();
+}, []);
 
   const getCurrentTime = () => {
     return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });

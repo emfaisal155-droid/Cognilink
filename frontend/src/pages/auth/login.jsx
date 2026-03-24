@@ -9,11 +9,34 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    console.log("Login Attempt:", { email, password });
-    // After logic, we go to dashboard
-    navigate('/dashboard'); 
+    
+    try {
+      // 1. Send the data to your C# Backend
+      const response = await fetch('http://localhost:7174/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (response.ok) {
+        // 2. If the backend says "Yes", save the user and go to dashboard
+        const data = await response.json();
+        localStorage.setItem('isLoggedIn', 'true');
+        console.log("Login Successful:", data);
+        navigate('/dashboard');
+      } else {
+        // 3. If the backend says "No" (e.g., wrong password)
+        alert("Invalid email or password!");
+      }
+    } catch (error) {
+      // 4. If the server is not running or there is a network error
+      console.error("Connection error:", error);
+      alert("Could not connect to the server. Is the backend running on port 7174?");
+    }
   };
 
   return (

@@ -15,13 +15,41 @@ export default function Signup() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
+
+    // 1. Keep your existing validation
     if (formData.password !== formData.confirmPassword) {
       alert("Passwords do not match!");
       return;
     }
-    console.log("Account Created:", formData);
+
+    try {
+      // 2. Send data to the backend
+      const response = await fetch('http://localhost:7174/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        // We send fullName, email, and password (confirmPassword isn't needed by DB)
+        body: JSON.stringify({
+          fullName: formData.fullName,
+          email: formData.email,
+          password: formData.password
+        }),
+      });
+
+      if (response.ok) {
+        alert("Account created successfully!");
+        navigate('/auth/login'); // Redirect to login after signup
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message || "Signup failed. Email might already be in use.");
+      }
+    } catch (error) {
+      console.error("Connection error:", error);
+      alert("Cannot connect to server. Ensure backend is running on port 7174.");
+    }
   };
 
   return (

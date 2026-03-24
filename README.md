@@ -25,8 +25,8 @@ By automatically extracting key concepts and identifying meaningful relationship
 
 ### API Endpoints
 **Authentication:**
-1.POST /api/account/register-Register new user
-2.POST /api/account/login-Login with cerendentials
+-POST /api/account/register-Register new user
+-POST /api/account/login-Login with cerendentials
 
 **Notes:**
 -POST /api/notes -Create a note

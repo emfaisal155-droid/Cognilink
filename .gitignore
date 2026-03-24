@@ -1,0 +1,31 @@
+# --- Visual Studio & IDEs ---
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+CogniLinkNew/
+
+# --- .NET / ASP.NET Core (Backened) ---
+**/bin/
+**/obj/
+[Bb]in/
+[Ob]j/
+*.exe
+*.dll
+*.pdb
+
+# --- Node / React (Frontend) ---
+node_modules/
+dist/
+dist-ssr/
+*.local
+.eslintcache
+
+# --- Databases ---
+*.mdf
+*.ldf
+
+# --- OS Files ---
+.DS_Store
+Thumbs.db

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Cognilink.infrastructure;
 using Cognilink.infrastructure.Repositories;
+using Cognilink.infrastructure.Services; //for iteration2
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,3 +43,5 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
+
+builder.Services.AddScoped<ConceptProcessingOrchestrator>(); //iteration2

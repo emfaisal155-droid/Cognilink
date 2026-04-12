@@ -1,6 +1,7 @@
-using Xunit;
+﻿using Xunit;
 using Microsoft.EntityFrameworkCore;
 using Cognilink.infrastructure;
+using Cognilink.infrastructure.Services;
 using Cognilink.core;
 using Cognilink_ASP.NET_.Controllers;
 using Microsoft.AspNetCore.Mvc;
@@ -79,7 +80,8 @@ namespace CogniLink.Tests
         {
             var context = GetInMemoryContext();
             var accountController = new AccountController(context);
-            var notesController = new NotesController(context);
+            var orchestrator = new ConceptProcessingOrchestrator(context);
+            var notesController = new NotesController(context, orchestrator);
 
             await accountController.Register(new RegisterDto { Username = "testuser", Password = "Test123!" });
 
@@ -95,7 +97,8 @@ namespace CogniLink.Tests
         {
             var context = GetInMemoryContext();
             var accountController = new AccountController(context);
-            var notesController = new NotesController(context);
+            var orchestrator = new ConceptProcessingOrchestrator(context);
+            var notesController = new NotesController(context, orchestrator);
 
             await accountController.Register(new RegisterDto { Username = "user1", Password = "Test123!" });
             await accountController.Register(new RegisterDto { Username = "user2", Password = "Test123!" });
@@ -107,6 +110,60 @@ namespace CogniLink.Tests
 
             Assert.IsType<ObjectResult>(result);
             Assert.Equal(403, ((ObjectResult)result).StatusCode);
+        }
+
+        // ── Ammara's Tests ─────────────────────────────────────────────
+
+        // Test 7: Concept extraction saves keywords from note content
+        [Fact]
+        public async Task ProcessNote_SavesExtractedConcepts()
+        {
+            var context = GetInMemoryContext();
+            var orchestrator = new ConceptProcessingOrchestrator(context);
+
+            var note = new Note { Id = 1, Title = "ML", Content = "machine learning machine learning deep learning neural", UserId = 1 };
+            context.Notes.Add(note);
+            await context.SaveChangesAsync();
+
+            await orchestrator.ProcessNoteAsync(note);
+
+            var concepts = context.Concepts.Where(c => c.NoteId == 1).ToList();
+            Assert.NotEmpty(concepts);
+        }
+
+        // Test 8: Stop words are not saved as concepts
+        [Fact]
+        public async Task ProcessNote_DoesNotSaveStopWords()
+        {
+            var context = GetInMemoryContext();
+            var orchestrator = new ConceptProcessingOrchestrator(context);
+
+            var note = new Note { Id = 2, Title = "Test", Content = "the and but or the and but or the and", UserId = 1 };
+            context.Notes.Add(note);
+            await context.SaveChangesAsync();
+
+            await orchestrator.ProcessNoteAsync(note);
+
+            var concepts = context.Concepts.Where(c => c.NoteId == 2).ToList();
+            Assert.Empty(concepts);
+        }
+
+        // Test 9: Removing note concepts cleans up database
+        [Fact]
+        public async Task RemoveNoteConcepts_DeletesCorrectly()
+        {
+            var context = GetInMemoryContext();
+            var orchestrator = new ConceptProcessingOrchestrator(context);
+
+            var note = new Note { Id = 3, Title = "Test", Content = "database database database query", UserId = 1 };
+            context.Notes.Add(note);
+            await context.SaveChangesAsync();
+
+            await orchestrator.ProcessNoteAsync(note);
+            await orchestrator.RemoveNoteConceptsAsync(3);
+
+            var concepts = context.Concepts.Where(c => c.NoteId == 3).ToList();
+            Assert.Empty(concepts);
         }
     }
 }

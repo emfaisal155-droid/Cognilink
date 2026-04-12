@@ -13,14 +13,21 @@ builder.Services.AddControllersWithViews()
     });
 
 
+/*builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));*/
+
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection")
+        ?? "Server=(localdb)\\mssqllocaldb;Database=CognilinkDb;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True"));
+
 
 builder.Services.AddScoped<INoteRepository, NoteRepository>();  //This allows Ammara to ask for INoteRepository in her Controllers, and the system will automatically provide the database logic you wrote.
 
 builder.Services.AddAuthentication();
 builder.Services.AddAuthorization();
-
+builder.Services.AddScoped<ConceptProcessingOrchestrator>(); //iteration2
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -44,4 +51,3 @@ app.MapControllerRoute(
 
 app.Run();
 
-builder.Services.AddScoped<ConceptProcessingOrchestrator>(); //iteration2

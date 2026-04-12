@@ -6,9 +6,7 @@ using System.Threading.Tasks;
 
 namespace Cognilink.core
 {
-    internal class Note
-    {
-    }
+   
 }
 
 public class Note

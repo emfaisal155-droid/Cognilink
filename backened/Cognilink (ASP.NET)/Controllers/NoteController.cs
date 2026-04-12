@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Cognilink.core;
 using Cognilink.infrastructure;
+using Cognilink.infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cognilink_ASP.NET_.Controllers
@@ -10,10 +11,12 @@ namespace Cognilink_ASP.NET_.Controllers
     public class NotesController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly ConceptProcessingOrchestrator _orchestrator;
 
-        public NotesController(AppDbContext context)
+        public NotesController(AppDbContext context, ConceptProcessingOrchestrator orchestrator)
         {
             _context = context;
+            _orchestrator = orchestrator;
         }
 
         // POST: api/notes
@@ -33,6 +36,10 @@ namespace Cognilink_ASP.NET_.Controllers
 
             _context.Notes.Add(note);
             await _context.SaveChangesAsync();
+
+            // Ammara: trigger concept extraction after note is saved
+            await _orchestrator.ProcessNoteAsync(note);
+
             return Ok(note);
         }
 
@@ -65,8 +72,11 @@ namespace Cognilink_ASP.NET_.Controllers
 
             note.Title = dto.Title;
             note.Content = dto.Content;
-
             await _context.SaveChangesAsync();
+
+            // Ammara: re-extract concepts when note is updated
+            await _orchestrator.ProcessNoteAsync(note);
+
             return Ok(note);
         }
 
@@ -85,8 +95,12 @@ namespace Cognilink_ASP.NET_.Controllers
             if (note.UserId != user.Id)
                 return StatusCode(403, "You can only delete your own notes.");
 
+            // Ammara: remove concepts before deleting note
+            await _orchestrator.RemoveNoteConceptsAsync(note.Id);
+
             _context.Notes.Remove(note);
             await _context.SaveChangesAsync();
+
             return Ok("Note deleted successfully.");
         }
     }

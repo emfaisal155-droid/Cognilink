@@ -1,4 +1,3 @@
--- USERS (skip if already exists)
 INSERT INTO Users (Id, Username, Email, PasswordHash)
 VALUES 
 (1, 'eman_faisal',   'eman@cognilink.com',   'hashed_password_1'),

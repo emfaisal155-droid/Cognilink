@@ -38,7 +38,7 @@ export default function NoteEditor({ isOpen, onClose, onSave, editNote }) {
       // Note: This assumes your onSave returns the note ID or you use editNote.id
       const noteId = editNote?.id; 
       if (noteId) {
-        await fetch(`http://localhost:7174/api/extraction/trigger/${noteId}`, {
+        await fetch(`https://localhost:7174/api/extraction/trigger/${noteId}`, {
           method: 'POST',
         });
       }

@@ -1,6 +1,6 @@
-using Cognilink__ASP.NET_.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
+using Cognilink__ASP.NET_.Models;
 
 namespace Cognilink__ASP.NET_.Controllers
 {
@@ -15,18 +15,18 @@ namespace Cognilink__ASP.NET_.Controllers
 
         public IActionResult Index()
         {
-            return View();
+            return Ok("CogniLink API is running.");
         }
 
         public IActionResult Privacy()
         {
-            return View();
+            return Ok("Privacy page.");
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+            return Ok("An error occurred.");
         }
     }
 }

@@ -5,6 +5,8 @@ import Signup from './pages/auth/signup';
 import './App.css';
 import './index.css';
 import Dashboard from './pages/dashboard/dashboard';
+// NEW: Import the Graph Page (User Story 3)
+import GraphPage from './pages/graph/graphPage'; 
 
 function App() {
   return (
@@ -14,8 +16,13 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
-          {/* We will create the Dashboard route next! */}
+          
+          {/* Dashboard route */}
           <Route path="/dashboard" element={<Dashboard />} />
+          
+          {/* NEW: Graph Interface Route (Sub-story 3.1) */}
+          <Route path="/graphs" element={<GraphPage />} />
+          
           <Route path="/" element={<Navigate to="/login" />} />
         </Routes>
       </div>

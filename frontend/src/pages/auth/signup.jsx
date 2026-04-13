@@ -26,7 +26,7 @@ export default function Signup() {
 
     try {
       // 2. Send data to the backend
-      const response = await fetch('http://localhost:7174/api/account/register', {
+      const response = await fetch('https://localhost:7174/api/account/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

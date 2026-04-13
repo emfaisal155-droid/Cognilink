@@ -550,3 +550,127 @@
   background-color: #f5f5f5;
   border-color: #D35400;
 }
+
+/* Stats Badges in Dashboard Header */
+.stat-container {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+.stat-card-mini {
+  background: #fff;
+  border: 1px solid #000;
+  padding: 8px 12px;
+  border-radius: 4px;
+  box-shadow: 2px 2px 0px #000; /* Matching your login page button style */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 100px;
+}
+
+.stat-card-mini span:first-child {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: #666;
+  font-weight: bold;
+}
+
+.stat-card-mini span:last-child {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #D35400; /* Your theme orange */
+}
+
+/* Recent Concepts Sidebar List */
+.recent-concepts-wrapper {
+  margin-top: 30px;
+  border-top: 1px solid rgba(255,255,255,0.2);
+  padding-top: 15px;
+}
+
+.concept-list-item {
+  font-size: 0.85rem;
+  padding: 6px 0;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform 0.2s;
+}
+
+.concept-list-item:hover {
+  transform: translateX(5px);
+  color: #ffd8b1;
+}
+
+/* The Main Graph Area */
+.graph-canvas-container {
+  border: 2px solid #000;
+  background-color: #fafafa;
+  background-image: radial-gradient(#ddd 1px, transparent 1px);
+  background-size: 20px 20px; /* Grid background effect */
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.graph-node {
+  padding: 10px 18px;
+  background: #fff;
+  border: 2px solid #D35400;
+  border-radius: 50px;
+  font-weight: bold;
+  cursor: grab;
+  box-shadow: 4px 4px 0px #333; /* Thick shadow style */
+  transition: all 0.2s;
+  display: inline-block;
+  margin: 10px;
+}
+
+.graph-node:hover {
+  transform: scale(1.05);
+  background-color: #D35400;
+  color: #fff;
+}
+
+/* Floating Controls */
+.graph-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.control-btn {
+  width: 40px;
+  height: 40px;
+  background: #fff;
+  border: 2px solid #000;
+  font-size: 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.control-btn:hover {
+  background: #eee;
+}
+
+@keyframes pulse-orange {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+.syncing-text {
+  color: #D35400;
+  font-weight: bold;
+  font-size: 0.8rem;
+  animation: pulse-orange 1.5s infinite;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}

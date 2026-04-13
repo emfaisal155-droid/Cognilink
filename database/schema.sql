@@ -39,3 +39,47 @@ GO
 COMMIT;
 GO
 
+BEGIN TRANSACTION;
+GO
+
+CREATE TABLE [Concepts] (
+    [Id] int NOT NULL IDENTITY,
+    [Name] nvarchar(max) NOT NULL,
+    [Frequency] int NOT NULL,
+    [NoteId] int NOT NULL,
+    [UserId] int NOT NULL,
+    CONSTRAINT [PK_Concepts] PRIMARY KEY ([Id]),
+    CONSTRAINT [FK_Concepts_Notes_NoteId] FOREIGN KEY ([NoteId]) REFERENCES [Notes] ([Id]) ON DELETE CASCADE
+);
+GO
+
+CREATE TABLE [ConceptRelationships] (
+    [Id] int NOT NULL IDENTITY,
+    [SourceConceptId] int NOT NULL,
+    [TargetConceptId] int NOT NULL,
+    [SimilarityScore] float NOT NULL,
+    [UserId] int NOT NULL,
+    CONSTRAINT [PK_ConceptRelationships] PRIMARY KEY ([Id]),
+    CONSTRAINT [FK_ConceptRelationships_Concepts_SourceConceptId] FOREIGN KEY ([SourceConceptId]) REFERENCES [Concepts] ([Id]) ON DELETE NO ACTION,
+    CONSTRAINT [FK_ConceptRelationships_Concepts_TargetConceptId] FOREIGN KEY ([TargetConceptId]) REFERENCES [Concepts] ([Id]) ON DELETE NO ACTION
+);
+GO
+
+CREATE INDEX [IX_ConceptRelationships_SourceConceptId] ON [ConceptRelationships] ([SourceConceptId]);
+GO
+
+CREATE INDEX [IX_ConceptRelationships_TargetConceptId] ON [ConceptRelationships] ([TargetConceptId]);
+GO
+
+CREATE INDEX [IX_Concepts_NoteId] ON [Concepts] ([NoteId]);
+GO
+
+INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+VALUES (N'20260411104014_AddConceptAndRelationshipTables', N'8.0.25');
+GO
+
+COMMIT;
+GO
+
+
+

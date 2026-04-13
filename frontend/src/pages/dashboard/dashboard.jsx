@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import NoteEditor from '../../components/noteEditor';
+// NEW COMPONENTS IMPORT
+import StatCard from '../../components/statCard';
+import RecentConcepts from '../../components/recentConcepts';
 
 export default function Dashboard() {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -7,6 +10,10 @@ export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [view, setView] = useState('active'); 
   const [notes, setNotes] = useState([]);
+
+  // NEW: State for Dashboard Expansion requirements
+  const [stats, setStats] = useState({ totalNodes: 0, totalEdges: 0 });
+  const [recentConcepts, setRecentConcepts] = useState([]);
 
   // 1. Load Notes from Backend on startup
   useEffect(() => {
@@ -20,6 +27,21 @@ export default function Dashboard() {
           const data = await response.json();
           setNotes(data);
         }
+
+        // NEW: Fetch At-a-Glance Stats (Expansion Requirement)
+        const statsRes = await fetch(`http://localhost:7174/api/dashboard/stats/${user}`);
+        if (statsRes.ok) {
+          const statsData = await statsRes.json();
+          setStats(statsData);
+        }
+
+        // NEW: Fetch Recently Extracted Concepts (Sub-story 1.2)
+        const conceptRes = await fetch(`http://localhost:7174/api/concepts/recent/${user}`);
+        if (conceptRes.ok) {
+          const conceptData = await conceptRes.json();
+          setRecentConcepts(conceptData);
+        }
+
       } catch (err) {
         console.error("Connection failed:", err);
       }
@@ -58,6 +80,12 @@ export default function Dashboard() {
         const res = await fetch(`http://localhost:7174/api/notes/${user}`);
         const data = await res.json();
         setNotes(data);
+
+        // NEW: Refresh stats and concepts after a save (Sub-story 4.1)
+        const statsRes = await fetch(`http://localhost:7174/api/dashboard/stats/${user}`);
+        const conceptRes = await fetch(`http://localhost:7174/api/concepts/recent/${user}`);
+        if (statsRes.ok) setStats(await statsRes.json());
+        if (conceptRes.ok) setRecentConcepts(await conceptRes.json());
       }
     } catch (err) {
       console.error("Save failed:", err);
@@ -74,14 +102,16 @@ export default function Dashboard() {
     
     if (window.confirm(message)) {
       try {
-        // If your backend handles soft delete, this might be a PUT. 
-        // Following standard API logic, we use DELETE:
         const response = await fetch(`http://localhost:7174/api/notes/${id}`, {
           method: 'DELETE'
         });
 
         if (response.ok) {
           setNotes(notes.filter(n => n.id !== id));
+          
+          // NEW: Refresh stats as node/edges may be removed (Sub-story 4.2)
+          const statsRes = await fetch(`http://localhost:7174/api/dashboard/stats/${user}`);
+          if (statsRes.ok) setStats(await statsRes.json());
         }
       } catch (err) {
         console.error("Delete failed:", err);
@@ -91,8 +121,6 @@ export default function Dashboard() {
 
   const restoreNote = (e, id) => {
     e.stopPropagation();
-    // Local update for immediate feedback; 
-    // Ideally, this should also be a PUT call to the backend to set deleted: false
     setNotes(notes.map(n => n.id === id ? { ...n, deleted: false } : n));
     setView('active');
   };
@@ -127,6 +155,7 @@ export default function Dashboard() {
             >
               Notes
             </li>
+            {/* LINK TO GRAPH VIEW COULD BE ADDED HERE */}
             <li>Graphs</li>
             <li>Settings</li>
           </ul>
@@ -157,6 +186,13 @@ export default function Dashboard() {
           >
             Trash
           </button>
+
+          {/* NEW: Recent Concepts Section in Sidebar (User Story 1) */}
+          {view === 'active' && (
+            <div style={{ padding: '0 15px', color: 'white' }}>
+              <RecentConcepts concepts={recentConcepts} />
+            </div>
+          )}
         </div>
       </aside>
 
@@ -165,6 +201,14 @@ export default function Dashboard() {
           <h2>{view === 'trash' ? 'Trash' : 'My Documents'}</h2>
           
           <div className="header-actions">
+            {/* NEW: Dashboard Expansion Stats integrated into header */}
+            {view === 'active' && (
+              <div style={{ display: 'flex', gap: '15px', marginRight: '20px' }}>
+                <StatCard label="Total Nodes" value={stats.totalNodes} />
+                <StatCard label="Relationships" value={stats.totalEdges} />
+              </div>
+            )}
+
             <div className="status-info">
               <span className={`stat-badge ${view === 'trash' ? 'trash-count' : ''}`}>
                 {view === 'trash' ? 'Deleted Items: ' : 'Total Notes: '} 

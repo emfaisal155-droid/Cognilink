@@ -22,21 +22,21 @@ export default function Dashboard() {
       if (!user) return;
 
       try {
-        const response = await fetch(`http://localhost:7174/api/notes/${user}`);
+        const response = await fetch(`https://localhost:7174/api/notes/${user}`);
         if (response.ok) {
           const data = await response.json();
           setNotes(data);
         }
 
         // NEW: Fetch At-a-Glance Stats (Expansion Requirement)
-        const statsRes = await fetch(`http://localhost:7174/api/dashboard/stats/${user}`);
+        const statsRes = await fetch(`https://localhost:7174/api/dashboard/stats/${user}`);
         if (statsRes.ok) {
           const statsData = await statsRes.json();
           setStats(statsData);
         }
 
         // NEW: Fetch Recently Extracted Concepts (Sub-story 1.2)
-        const conceptRes = await fetch(`http://localhost:7174/api/concepts/recent/${user}`);
+        const conceptRes = await fetch(`https://localhost:7174/api/concepts/recent/${user}`);
         if (conceptRes.ok) {
           const conceptData = await conceptRes.json();
           setRecentConcepts(conceptData);
@@ -60,8 +60,8 @@ export default function Dashboard() {
     const timestamp = getCurrentTime();
     
     const url = isEditing 
-      ? `http://localhost:7174/api/notes/${savedNote.id}` 
-      : `http://localhost:7174/api/notes`;
+      ? `https://localhost:7174/api/notes/${savedNote.id}` 
+      : `https://localhost:7174/api/notes`;
 
     try {
       const response = await fetch(url, {
@@ -77,13 +77,13 @@ export default function Dashboard() {
 
       if (response.ok) {
         // Refresh notes from server to ensure UI is in sync with DB
-        const res = await fetch(`http://localhost:7174/api/notes/${user}`);
+        const res = await fetch(`https://localhost:7174/api/notes/${user}`);
         const data = await res.json();
         setNotes(data);
 
         // NEW: Refresh stats and concepts after a save (Sub-story 4.1)
-        const statsRes = await fetch(`http://localhost:7174/api/dashboard/stats/${user}`);
-        const conceptRes = await fetch(`http://localhost:7174/api/concepts/recent/${user}`);
+        const statsRes = await fetch(`https://localhost:7174/api/dashboard/stats/${user}`);
+        const conceptRes = await fetch(`https://localhost:7174/api/concepts/recent/${user}`);
         if (statsRes.ok) setStats(await statsRes.json());
         if (conceptRes.ok) setRecentConcepts(await conceptRes.json());
       }
@@ -102,7 +102,7 @@ export default function Dashboard() {
     
     if (window.confirm(message)) {
       try {
-        const response = await fetch(`http://localhost:7174/api/notes/${id}`, {
+        const response = await fetch(`https://localhost:7174/api/notes/${id}`, {
           method: 'DELETE'
         });
 
@@ -110,7 +110,7 @@ export default function Dashboard() {
           setNotes(notes.filter(n => n.id !== id));
           
           // NEW: Refresh stats as node/edges may be removed (Sub-story 4.2)
-          const statsRes = await fetch(`http://localhost:7174/api/dashboard/stats/${user}`);
+          const statsRes = await fetch(`https://localhost:7174/api/dashboard/stats/${user}`);
           if (statsRes.ok) setStats(await statsRes.json());
         }
       } catch (err) {

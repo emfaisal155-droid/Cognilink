@@ -13,8 +13,8 @@ export default function GraphPage() {
       
       // Determine which endpoint to hit based on the filter
       const url = filterNoteId === 'all' 
-        ? `http://localhost:7174/api/graph` 
-        : `http://localhost:7174/api/graph/filter?noteId=${filterNoteId}`;
+        ? `https://localhost:7174/api/graph` 
+        : `https://localhost:7174/api/graph/filter?noteId=${filterNoteId}`;
 
       try {
         const response = await fetch(url);

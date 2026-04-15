@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // Added for redirect
+import { useNavigate } from 'react-router-dom';
 import NoteEditor from '../../components/noteEditor';
 import StatCard from '../../components/statCard';
 import RecentConcepts from '../../components/recentConcepts';
@@ -10,38 +10,40 @@ export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [view, setView] = useState('active'); 
   const [notes, setNotes] = useState([]);
-  const navigate = useNavigate(); // Navigation hook
+  const navigate = useNavigate();
 
   const [stats, setStats] = useState({ totalNodes: 0, totalEdges: 0 });
   const [recentConcepts, setRecentConcepts] = useState([]);
 
-  // 1. Load Notes from Backend on startup
+  // Load Notes from Backend
   useEffect(() => {
     const fetchNotes = async () => {
       const user = localStorage.getItem('username'); 
-      if (!user) return;
+      if (!user) {
+          console.warn("No username found in localStorage");
+          return;
+      }
 
       try {
         const response = await fetch(`https://localhost:7174/api/notes/${user}`);
         if (response.ok) {
-          const data = await response.text();
-          // Safety: Parse only if data exists, default to empty array
-          const parsedNotes = data ? JSON.parse(data) : [];
-          setNotes(Array.isArray(parsedNotes) ? parsedNotes : []);
+          const textData = await response.text();
+          // Ensure we don't try to parse an empty string
+          const parsedData = textData ? JSON.parse(textData) : [];
+          setNotes(Array.isArray(parsedData) ? parsedData : []);
         }
 
         const statsRes = await fetch(`https://localhost:7174/api/dashboard/stats/${user}`);
         if (statsRes.ok) {
-          const statsData = await statsRes.text();
-          setStats(JSON.parse(statsData));
+          const statsText = await statsRes.text();
+          setStats(statsText ? JSON.parse(statsText) : { totalNodes: 0, totalEdges: 0 });
         }
 
         const conceptRes = await fetch(`https://localhost:7174/api/concepts/recent/${user}`);
         if (conceptRes.ok) {
-          const conceptData = await conceptRes.text();
-          setRecentConcepts(JSON.parse(conceptData));
+          const conceptText = await conceptRes.text();
+          setRecentConcepts(conceptText ? JSON.parse(conceptText) : []);
         }
-
       } catch (err) {
         console.error("Connection failed:", err);
       }
@@ -53,7 +55,6 @@ export default function Dashboard() {
     return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  // 2. Save or Update Note in DB
   const handleSaveNote = async (savedNote) => {
     const isEditing = !!editNote;
     const user = localStorage.getItem('username');
@@ -76,21 +77,23 @@ export default function Dashboard() {
       });
 
       if (response.ok) {
+        // Re-fetch notes after save to sync state
         const res = await fetch(`https://localhost:7174/api/notes/${user}`);
-        const data = await res.text();
-        const parsed = data ? JSON.parse(data) : [];
-        setNotes(Array.isArray(parsed) ? parsed : []);
+        const textData = await res.text();
+        const parsedData = textData ? JSON.parse(textData) : [];
+        setNotes(Array.isArray(parsedData) ? parsedData : []);
 
+        // Update stats and concepts
         const statsRes = await fetch(`https://localhost:7174/api/dashboard/stats/${user}`);
-        const conceptRes = await fetch(`https://localhost:7174/api/concepts/recent/${user}`);
-        
         if (statsRes.ok) {
           const sText = await statsRes.text();
-          setStats(JSON.parse(sText));
+          setStats(sText ? JSON.parse(sText) : { totalNodes: 0, totalEdges: 0 });
         }
+        
+        const conceptRes = await fetch(`https://localhost:7174/api/concepts/recent/${user}`);
         if (conceptRes.ok) {
           const cText = await conceptRes.text();
-          setRecentConcepts(JSON.parse(cText));
+          setRecentConcepts(cText ? JSON.parse(cText) : []);
         }
       }
     } catch (err) {
@@ -103,17 +106,15 @@ export default function Dashboard() {
   const handleDelete = async (e, id) => {
     e.stopPropagation();
     const user = localStorage.getItem('username');
-    const message = view === 'trash' ? "Permanently delete this note?" : "Move this note to Trash?";
     
-    if (window.confirm(message)) {
+    if (window.confirm(view === 'trash' ? "Permanently delete?" : "Move to Trash?")) {
       try {
         const response = await fetch(`https://localhost:7174/api/notes/${id}`, {
           method: 'DELETE'
         });
 
         if (response.ok) {
-          setNotes(notes.filter(n => n.id !== id));
-          
+          setNotes(prev => prev.filter(n => n.id !== id));
           const statsRes = await fetch(`https://localhost:7174/api/dashboard/stats/${user}`);
           if (statsRes.ok) {
             const sText = await statsRes.text();
@@ -142,9 +143,10 @@ export default function Dashboard() {
   const filteredNotes = notes.filter(note => {
     const matchesView = view === 'trash' ? note.deleted : !note.deleted;
     if (!lowerSearch) return matchesView;
-    const titleMatch = (note.title || "").toLowerCase().includes(lowerSearch);
-    const contentMatch = (note.content || "").toLowerCase().includes(lowerSearch);
-    return matchesView && (titleMatch || contentMatch);
+    return matchesView && (
+      (note.title || "").toLowerCase().includes(lowerSearch) || 
+      (note.content || "").toLowerCase().includes(lowerSearch)
+    );
   });
 
   return (
@@ -159,10 +161,7 @@ export default function Dashboard() {
             >
               Notes
             </li>
-            <li 
-              onClick={() => navigate('/graph')} 
-              style={{ cursor: 'pointer' }}
-            >
+            <li onClick={() => navigate('/graph')} style={{ cursor: 'pointer' }}>
               Graphs
             </li>
             <li>Settings</li>
@@ -226,7 +225,6 @@ export default function Dashboard() {
               <button 
                 className="add-note-btn" 
                 onClick={() => { setEditNote(null); setIsEditorOpen(true); }}
-                title="Create a new note"
               >
                 <span className="plus-icon">+</span> New Note
               </button>
@@ -249,22 +247,10 @@ export default function Dashboard() {
                   <span className="note-item-title">{note.title}</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                     <span className="note-item-date">{note.date}</span>
-                    
                     {view === 'trash' && (
-                       <button 
-                        onClick={(e) => restoreNote(e, note.id)} 
-                        className="delete-icon-btn" 
-                        title="Restore Note" 
-                       >
-                         ↩️
-                       </button>
+                       <button onClick={(e) => restoreNote(e, note.id)} className="delete-icon-btn">↩️</button>
                     )}
-                    
-                    <button 
-                      onClick={(e) => handleDelete(e, note.id)} 
-                      className="delete-icon-btn"
-                      title={view === 'trash' ? "Permanently Delete" : "Move to Trash"}
-                    >
+                    <button onClick={(e) => handleDelete(e, note.id)} className="delete-icon-btn">
                       {view === 'trash' ? '❌' : '🗑️'}
                     </button>
                   </div>
@@ -273,11 +259,8 @@ export default function Dashboard() {
               </div>
             ))
           ) : (
-            <div className="empty-state" style={{ textAlign: 'center', marginTop: '40px', color: '#666', fontStyle: 'italic' }}>
-              {searchTerm 
-                ? `No results found for "${searchTerm}"` 
-                : (view === 'trash' ? 'Your trash is currently empty.' : 'Start your first note!')
-              }
+            <div className="empty-state" style={{ textAlign: 'center', marginTop: '40px', color: '#666' }}>
+              {searchTerm ? `No results for "${searchTerm}"` : "Nothing to see here."}
             </div>
           )}
         </div>

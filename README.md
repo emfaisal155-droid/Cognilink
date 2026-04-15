@@ -15,7 +15,7 @@ By automatically extracting key concepts and identifying meaningful relationship
 - Frontend: React 
 - Database: Microsoft SQL Server
 
-##Project Overview
+## Project Overview
 Iteration 1: The Foundation
 Iteration 1 focused on the core infrastructure and basic CRUD (Create, Read, Update, Delete) functionality to establish a reliable data management system.
 

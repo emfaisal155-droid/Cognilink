@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'; // Added for redirect
 import NoteEditor from '../../components/noteEditor';
-// NEW COMPONENTS IMPORT
 import StatCard from '../../components/statCard';
 import RecentConcepts from '../../components/recentConcepts';
 
@@ -10,8 +10,8 @@ export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [view, setView] = useState('active'); 
   const [notes, setNotes] = useState([]);
+  const navigate = useNavigate(); // Navigation hook
 
-  // NEW: State for Dashboard Expansion requirements
   const [stats, setStats] = useState({ totalNodes: 0, totalEdges: 0 });
   const [recentConcepts, setRecentConcepts] = useState([]);
 
@@ -25,18 +25,17 @@ export default function Dashboard() {
         const response = await fetch(`https://localhost:7174/api/notes/${user}`);
         if (response.ok) {
           const data = await response.text();
-          // Parsing the text back to an object/array so the UI can use it
-          setNotes(JSON.parse(data));
+          // Safety: Parse only if data exists, default to empty array
+          const parsedNotes = data ? JSON.parse(data) : [];
+          setNotes(Array.isArray(parsedNotes) ? parsedNotes : []);
         }
 
-        // NEW: Fetch At-a-Glance Stats
         const statsRes = await fetch(`https://localhost:7174/api/dashboard/stats/${user}`);
         if (statsRes.ok) {
           const statsData = await statsRes.text();
           setStats(JSON.parse(statsData));
         }
 
-        // NEW: Fetch Recently Extracted Concepts
         const conceptRes = await fetch(`https://localhost:7174/api/concepts/recent/${user}`);
         if (conceptRes.ok) {
           const conceptData = await conceptRes.text();
@@ -79,7 +78,8 @@ export default function Dashboard() {
       if (response.ok) {
         const res = await fetch(`https://localhost:7174/api/notes/${user}`);
         const data = await res.text();
-        setNotes(JSON.parse(data));
+        const parsed = data ? JSON.parse(data) : [];
+        setNotes(Array.isArray(parsed) ? parsed : []);
 
         const statsRes = await fetch(`https://localhost:7174/api/dashboard/stats/${user}`);
         const conceptRes = await fetch(`https://localhost:7174/api/concepts/recent/${user}`);
@@ -89,7 +89,7 @@ export default function Dashboard() {
           setStats(JSON.parse(sText));
         }
         if (conceptRes.ok) {
-          const cText = await conceptRes.text(); // Changed .json() to .text() here
+          const cText = await conceptRes.text();
           setRecentConcepts(JSON.parse(cText));
         }
       }
@@ -100,7 +100,6 @@ export default function Dashboard() {
     setIsEditorOpen(false);
   };
 
-  // 3. Delete Note from DB
   const handleDelete = async (e, id) => {
     e.stopPropagation();
     const user = localStorage.getItem('username');
@@ -160,7 +159,12 @@ export default function Dashboard() {
             >
               Notes
             </li>
-            <li>Graphs</li>
+            <li 
+              onClick={() => navigate('/graph')} 
+              style={{ cursor: 'pointer' }}
+            >
+              Graphs
+            </li>
             <li>Settings</li>
           </ul>
         </div>

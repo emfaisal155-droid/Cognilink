@@ -13,7 +13,30 @@ By automatically extracting key concepts and identifying meaningful relationship
 ## Tech Stack
 - Backend: C# ASP.NET Core
 - Frontend: React 
-- Database: Microsoft SQL Server 
+- Database: Microsoft SQL Server
+
+##Project Overview
+Iteration 1: The Foundation
+Iteration 1 focused on the core infrastructure and basic CRUD (Create, Read, Update, Delete) functionality to establish a reliable data management system.
+
+User Authentication: Secure Login and Signup system integrated with a SQL Server backend.
+
+Document Management: A central dashboard for creating, editing, and organizing notes.
+
+Persistence: Direct integration with a C# API on port 7174 to ensure all data is stored securely in a relational database.
+
+Brutalist UI: Implementation of a high-contrast design system featuring bold borders and sharp "Hard Shadows" for a technical, document-focused aesthetic.
+
+Iteration 2: Automated Intelligence & Visualization
+Iteration 2 evolved the platform from a storage tool into an active intelligence system using automated extraction and graph visualization.
+
+Automated Concept Extraction: A backend NLP pipeline that identifies core keywords and concepts from note content upon saving.
+
+Relationship Detection: Algorithms that calculate similarity scores between documents to discover non-linear connections.
+
+Interactive Knowledge Map: A dedicated "Concept View" using a custom Node-Link diagram to visualize the user's entire knowledge base.
+
+At-a-Glance Analytics: Dashboard expansion featuring real-time statistics (Total Nodes and Edges) and a feed of recently extracted term
   
 ## How to Run
 ### Backend 

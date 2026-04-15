@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom'; 
 import NoteEditor from '../../components/noteEditor';
 import StatCard from '../../components/statCard';
 import RecentConcepts from '../../components/recentConcepts';
@@ -10,45 +10,53 @@ export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [view, setView] = useState('active'); 
   const [notes, setNotes] = useState([]);
-  const navigate = useNavigate();
+  const navigate = useNavigate(); 
 
   const [stats, setStats] = useState({ totalNodes: 0, totalEdges: 0 });
   const [recentConcepts, setRecentConcepts] = useState([]);
 
-  // Load Notes from Backend
+  // 1. Fetch data helper using .text()
+  const fetchDashboardData = async () => {
+    const user = localStorage.getItem('username'); 
+    if (!user) return;
+
+    try {
+      const response = await fetch(`https://localhost:7174/api/notes/${user}`);
+      if (response.ok) {
+        const text = await response.text();
+        const data = text ? JSON.parse(text) : [];
+        
+        // MAP DATA: This ensures that even if C# sends "Title", 
+        // your React code sees "title".
+        const normalizedNotes = (Array.isArray(data) ? data : []).map(n => ({
+          id: n.id || n.Id,
+          title: n.title || n.Title || "Untitled",
+          content: n.content || n.Content || "",
+          date: n.date || n.Date || n.createdAt || n.CreatedAt || "",
+          deleted: n.deleted || n.Deleted || false
+        }));
+        
+        setNotes(normalizedNotes);
+      }
+
+      const statsRes = await fetch(`https://localhost:7174/api/dashboard/stats/${user}`);
+      if (statsRes.ok) {
+        const sText = await statsRes.text();
+        setStats(sText ? JSON.parse(sText) : { totalNodes: 0, totalEdges: 0 });
+      }
+
+      const conceptRes = await fetch(`https://localhost:7174/api/concepts/recent/${user}`);
+      if (conceptRes.ok) {
+        const cText = await conceptRes.text();
+        setRecentConcepts(cText ? JSON.parse(cText) : []);
+      }
+    } catch (err) {
+      console.error("Fetch failed:", err);
+    }
+  };
+
   useEffect(() => {
-    const fetchNotes = async () => {
-      const user = localStorage.getItem('username'); 
-      if (!user) {
-          console.warn("No username found in localStorage");
-          return;
-      }
-
-      try {
-        const response = await fetch(`https://localhost:7174/api/notes/${user}`);
-        if (response.ok) {
-          const textData = await response.text();
-          // Ensure we don't try to parse an empty string
-          const parsedData = textData ? JSON.parse(textData) : [];
-          setNotes(Array.isArray(parsedData) ? parsedData : []);
-        }
-
-        const statsRes = await fetch(`https://localhost:7174/api/dashboard/stats/${user}`);
-        if (statsRes.ok) {
-          const statsText = await statsRes.text();
-          setStats(statsText ? JSON.parse(statsText) : { totalNodes: 0, totalEdges: 0 });
-        }
-
-        const conceptRes = await fetch(`https://localhost:7174/api/concepts/recent/${user}`);
-        if (conceptRes.ok) {
-          const conceptText = await conceptRes.text();
-          setRecentConcepts(conceptText ? JSON.parse(conceptText) : []);
-        }
-      } catch (err) {
-        console.error("Connection failed:", err);
-      }
-    };
-    fetchNotes();
+    fetchDashboardData();
   }, []);
 
   const getCurrentTime = () => {
@@ -77,24 +85,7 @@ export default function Dashboard() {
       });
 
       if (response.ok) {
-        // Re-fetch notes after save to sync state
-        const res = await fetch(`https://localhost:7174/api/notes/${user}`);
-        const textData = await res.text();
-        const parsedData = textData ? JSON.parse(textData) : [];
-        setNotes(Array.isArray(parsedData) ? parsedData : []);
-
-        // Update stats and concepts
-        const statsRes = await fetch(`https://localhost:7174/api/dashboard/stats/${user}`);
-        if (statsRes.ok) {
-          const sText = await statsRes.text();
-          setStats(sText ? JSON.parse(sText) : { totalNodes: 0, totalEdges: 0 });
-        }
-        
-        const conceptRes = await fetch(`https://localhost:7174/api/concepts/recent/${user}`);
-        if (conceptRes.ok) {
-          const cText = await conceptRes.text();
-          setRecentConcepts(cText ? JSON.parse(cText) : []);
-        }
+        await fetchDashboardData(); // Refresh everything
       }
     } catch (err) {
       console.error("Save failed:", err);
@@ -105,22 +96,12 @@ export default function Dashboard() {
 
   const handleDelete = async (e, id) => {
     e.stopPropagation();
-    const user = localStorage.getItem('username');
-    
     if (window.confirm(view === 'trash' ? "Permanently delete?" : "Move to Trash?")) {
       try {
         const response = await fetch(`https://localhost:7174/api/notes/${id}`, {
           method: 'DELETE'
         });
-
-        if (response.ok) {
-          setNotes(prev => prev.filter(n => n.id !== id));
-          const statsRes = await fetch(`https://localhost:7174/api/dashboard/stats/${user}`);
-          if (statsRes.ok) {
-            const sText = await statsRes.text();
-            setStats(JSON.parse(sText));
-          }
-        }
+        if (response.ok) fetchDashboardData();
       } catch (err) {
         console.error("Delete failed:", err);
       }
@@ -144,8 +125,8 @@ export default function Dashboard() {
     const matchesView = view === 'trash' ? note.deleted : !note.deleted;
     if (!lowerSearch) return matchesView;
     return matchesView && (
-      (note.title || "").toLowerCase().includes(lowerSearch) || 
-      (note.content || "").toLowerCase().includes(lowerSearch)
+      note.title.toLowerCase().includes(lowerSearch) || 
+      note.content.toLowerCase().includes(lowerSearch)
     );
   });
 
@@ -193,7 +174,6 @@ export default function Dashboard() {
           >
             Trash
           </button>
-
           {view === 'active' && (
             <div style={{ padding: '0 15px', color: 'white' }}>
               <RecentConcepts concepts={recentConcepts} />
@@ -205,7 +185,6 @@ export default function Dashboard() {
       <main className="workspace">
         <header className="workspace-header">
           <h2>{view === 'trash' ? 'Trash' : 'My Documents'}</h2>
-          
           <div className="header-actions">
             {view === 'active' && (
               <div style={{ display: 'flex', gap: '15px', marginRight: '20px' }}>
@@ -213,19 +192,14 @@ export default function Dashboard() {
                 <StatCard label="Relationships" value={stats.totalEdges} />
               </div>
             )}
-
             <div className="status-info">
               <span className={`stat-badge ${view === 'trash' ? 'trash-count' : ''}`}>
                 {view === 'trash' ? 'Deleted Items: ' : 'Total Notes: '} 
                 <strong>{filteredNotes.length}</strong>
               </span>
-              <span className="sync-status" style={{ color: '#27ae60' }}>● Cloud Sync Active</span>
             </div>
             {view === 'active' && (
-              <button 
-                className="add-note-btn" 
-                onClick={() => { setEditNote(null); setIsEditorOpen(true); }}
-              >
+              <button className="add-note-btn" onClick={() => { setEditNote(null); setIsEditorOpen(true); }}>
                 <span className="plus-icon">+</span> New Note
               </button>
             )}
@@ -234,15 +208,9 @@ export default function Dashboard() {
 
         <div className="sync-section">
           <h4>{view === 'trash' ? 'Recently Deleted' : 'My Notes'}</h4>
-          
           {filteredNotes.length > 0 ? (
             filteredNotes.map(note => (
-              <div 
-                key={note.id} 
-                className="note-list-item" 
-                onClick={() => openEditMode(note)} 
-                style={{ cursor: view === 'trash' ? 'default' : 'pointer' }}
-              >
+              <div key={note.id} className="note-list-item" onClick={() => openEditMode(note)}>
                 <div className="note-item-header">
                   <span className="note-item-title">{note.title}</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
@@ -259,9 +227,7 @@ export default function Dashboard() {
               </div>
             ))
           ) : (
-            <div className="empty-state" style={{ textAlign: 'center', marginTop: '40px', color: '#666' }}>
-              {searchTerm ? `No results for "${searchTerm}"` : "Nothing to see here."}
-            </div>
+            <div className="empty-state">No notes found.</div>
           )}
         </div>
       </main>

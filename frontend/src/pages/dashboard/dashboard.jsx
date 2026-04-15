@@ -63,7 +63,7 @@ export default function Dashboard() {
     return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  const handleSaveNote = async (savedNote) => {
+ /* const handleSaveNote = async (savedNote) => {
     const isEditing = !!editNote;
     const user = localStorage.getItem('username');
     const timestamp = getCurrentTime();
@@ -92,7 +92,57 @@ export default function Dashboard() {
     }
     setEditNote(null);
     setIsEditorOpen(false);
-  };
+  };*/
+
+  const handleSaveNote = async (savedNote) => {
+  const isEditing = !!editNote;
+  const user = localStorage.getItem('username');
+  const timestamp = getCurrentTime();
+  
+  // 1. Determine URL and Method
+  const url = isEditing 
+    ? `https://localhost:7174/api/notes/${savedNote.id}` 
+    : `https://localhost:7174/api/notes`;
+
+  try {
+    // 2. Send to Backend
+    const response = await fetch(url, {
+      method: isEditing ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...savedNote,
+        username: user,
+        date: timestamp,
+        deleted: false
+      })
+    });
+
+    if (response.ok) {
+      // 3. Refresh the Dashboard List
+      // We fetch again to ensure the ID from the database is synced
+      const res = await fetch(`https://localhost:7174/api/notes/${user}`);
+      const text = await res.text();
+      const data = text ? JSON.parse(text) : [];
+      
+      // Normalize Case Sensitivity (Mapping PascalCase to camelCase)
+      const normalizedNotes = (Array.isArray(data) ? data : []).map(n => ({
+        id: n.id || n.Id,
+        title: n.title || n.Title,
+        content: n.content || n.Content,
+        date: n.date || n.Date,
+        deleted: n.deleted || n.Deleted || false
+      }));
+
+      setNotes(normalizedNotes);
+    }
+  } catch (err) {
+    console.error("Failed to save note to database:", err);
+  }
+
+  // 4. Close Editor
+  setEditNote(null);
+  setIsEditorOpen(false);
+};
 
   const handleDelete = async (e, id) => {
     e.stopPropagation();

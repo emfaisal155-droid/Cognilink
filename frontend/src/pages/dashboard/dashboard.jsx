@@ -24,22 +24,23 @@ export default function Dashboard() {
       try {
         const response = await fetch(`https://localhost:7174/api/notes/${user}`);
         if (response.ok) {
-          const data = await response.json();
-          setNotes(data);
+          const data = await response.text();
+          // Parsing the text back to an object/array so the UI can use it
+          setNotes(JSON.parse(data));
         }
 
-        // NEW: Fetch At-a-Glance Stats (Expansion Requirement)
+        // NEW: Fetch At-a-Glance Stats
         const statsRes = await fetch(`https://localhost:7174/api/dashboard/stats/${user}`);
         if (statsRes.ok) {
-          const statsData = await statsRes.json();
-          setStats(statsData);
+          const statsData = await statsRes.text();
+          setStats(JSON.parse(statsData));
         }
 
-        // NEW: Fetch Recently Extracted Concepts (Sub-story 1.2)
+        // NEW: Fetch Recently Extracted Concepts
         const conceptRes = await fetch(`https://localhost:7174/api/concepts/recent/${user}`);
         if (conceptRes.ok) {
-          const conceptData = await conceptRes.json();
-          setRecentConcepts(conceptData);
+          const conceptData = await conceptRes.text();
+          setRecentConcepts(JSON.parse(conceptData));
         }
 
       } catch (err) {
@@ -76,16 +77,21 @@ export default function Dashboard() {
       });
 
       if (response.ok) {
-        // Refresh notes from server to ensure UI is in sync with DB
         const res = await fetch(`https://localhost:7174/api/notes/${user}`);
-        const data = await res.json();
-        setNotes(data);
+        const data = await res.text();
+        setNotes(JSON.parse(data));
 
-        // NEW: Refresh stats and concepts after a save (Sub-story 4.1)
         const statsRes = await fetch(`https://localhost:7174/api/dashboard/stats/${user}`);
         const conceptRes = await fetch(`https://localhost:7174/api/concepts/recent/${user}`);
-        if (statsRes.ok) setStats(await statsRes.json());
-        if (conceptRes.ok) setRecentConcepts(await conceptRes.json());
+        
+        if (statsRes.ok) {
+          const sText = await statsRes.text();
+          setStats(JSON.parse(sText));
+        }
+        if (conceptRes.ok) {
+          const cText = await conceptRes.text(); // Changed .json() to .text() here
+          setRecentConcepts(JSON.parse(cText));
+        }
       }
     } catch (err) {
       console.error("Save failed:", err);
@@ -109,9 +115,11 @@ export default function Dashboard() {
         if (response.ok) {
           setNotes(notes.filter(n => n.id !== id));
           
-          // NEW: Refresh stats as node/edges may be removed (Sub-story 4.2)
           const statsRes = await fetch(`https://localhost:7174/api/dashboard/stats/${user}`);
-          if (statsRes.ok) setStats(await statsRes.json());
+          if (statsRes.ok) {
+            const sText = await statsRes.text();
+            setStats(JSON.parse(sText));
+          }
         }
       } catch (err) {
         console.error("Delete failed:", err);
@@ -134,12 +142,9 @@ export default function Dashboard() {
   const lowerSearch = searchTerm.toLowerCase().trim();
   const filteredNotes = notes.filter(note => {
     const matchesView = view === 'trash' ? note.deleted : !note.deleted;
-
     if (!lowerSearch) return matchesView;
-
     const titleMatch = (note.title || "").toLowerCase().includes(lowerSearch);
     const contentMatch = (note.content || "").toLowerCase().includes(lowerSearch);
-    
     return matchesView && (titleMatch || contentMatch);
   });
 
@@ -155,7 +160,6 @@ export default function Dashboard() {
             >
               Notes
             </li>
-            {/* LINK TO GRAPH VIEW COULD BE ADDED HERE */}
             <li>Graphs</li>
             <li>Settings</li>
           </ul>
@@ -187,7 +191,6 @@ export default function Dashboard() {
             Trash
           </button>
 
-          {/* NEW: Recent Concepts Section in Sidebar (User Story 1) */}
           {view === 'active' && (
             <div style={{ padding: '0 15px', color: 'white' }}>
               <RecentConcepts concepts={recentConcepts} />
@@ -201,7 +204,6 @@ export default function Dashboard() {
           <h2>{view === 'trash' ? 'Trash' : 'My Documents'}</h2>
           
           <div className="header-actions">
-            {/* NEW: Dashboard Expansion Stats integrated into header */}
             {view === 'active' && (
               <div style={{ display: 'flex', gap: '15px', marginRight: '20px' }}>
                 <StatCard label="Total Nodes" value={stats.totalNodes} />

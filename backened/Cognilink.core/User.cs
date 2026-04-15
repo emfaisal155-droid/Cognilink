@@ -7,9 +7,10 @@ using System.Threading.Tasks;
 
 namespace Cognilink.core
 {
-    internal class User
+   /* internal class User
     {
     }
+   */
 }
 
 public class User

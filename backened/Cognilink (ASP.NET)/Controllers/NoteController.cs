@@ -31,7 +31,9 @@ namespace Cognilink_ASP.NET_.Controllers
             {
                 Title = dto.Title,
                 Content = dto.Content,
-                UserId = user.Id
+                UserId = user.Id,
+                CreatedAt = DateTime.UtcNow,
+                Deleted = false
             };
 
             _context.Notes.Add(note);
@@ -51,7 +53,18 @@ namespace Cognilink_ASP.NET_.Controllers
             if (user == null)
                 return Unauthorized("User not found.");
 
-            var notes = _context.Notes.Where(n => n.UserId == user.Id).ToList();
+            var notes = _context.Notes
+                .Where(n => n.UserId == user.Id)
+                .Select(n => new {
+                    id = n.Id,
+                    title = n.Title,
+                    content = n.Content,
+                    createdAt = n.CreatedAt,
+                    deleted = n.Deleted,
+                    userId = n.UserId
+                })
+                .ToList();
+
             return Ok(notes);
         }
 
@@ -77,27 +90,28 @@ namespace Cognilink_ASP.NET_.Controllers
             // Ammara: re-extract concepts when note is updated
             await _orchestrator.ProcessNoteAsync(note);
 
-            return Ok(note);
+            return Ok(new
+            {
+                id = note.Id,
+                title = note.Title,
+                content = note.Content,
+                createdAt = note.CreatedAt,
+                deleted = note.Deleted,
+                userId = note.UserId
+            });
         }
 
         // DELETE: api/notes/{id}
+        // Fixed: removed [FromBody] since frontend sends no body
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteNote(int id, [FromBody] DeleteDto dto)
+        public async Task<IActionResult> DeleteNote(int id)
         {
-            var user = _context.Users.FirstOrDefault(u => u.Username == dto.Username);
-            if (user == null)
-                return Unauthorized("User not found.");
-
             var note = _context.Notes.FirstOrDefault(n => n.Id == id);
             if (note == null)
                 return NotFound("Note not found.");
 
-            if (note.UserId != user.Id)
-                return StatusCode(403, "You can only delete your own notes.");
-
             // Ammara: remove concepts before deleting note
             await _orchestrator.RemoveNoteConceptsAsync(note.Id);
-
             _context.Notes.Remove(note);
             await _context.SaveChangesAsync();
 

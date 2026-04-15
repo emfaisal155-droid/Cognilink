@@ -24,8 +24,9 @@ export default function Login() {
 
       if (response.ok) {
         // 2. If the backend says "Yes", save the user and go to dashboard
-        const data = await response.json();
+        const data = await response.text();
         localStorage.setItem('isLoggedIn', 'true');
+ localStorage.setItem('username', email); 
         console.log("Login Successful:", data);
         navigate('/dashboard');
       } else {

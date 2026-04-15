@@ -16,7 +16,7 @@ By automatically extracting key concepts and identifying meaningful relationship
 - Database: Microsoft SQL Server
 
 ## Project Overview
-Iteration 1: The Foundation
+**Iteration 1: The Foundation**
 Iteration 1 focused on the core infrastructure and basic CRUD (Create, Read, Update, Delete) functionality to establish a reliable data management system.
 
 User Authentication: Secure Login and Signup system integrated with a SQL Server backend.
@@ -27,7 +27,7 @@ Persistence: Direct integration with a C# API on port 7174 to ensure all data is
 
 Brutalist UI: Implementation of a high-contrast design system featuring bold borders and sharp "Hard Shadows" for a technical, document-focused aesthetic.
 
-Iteration 2: Automated Intelligence & Visualization
+**Iteration 2: Automated Intelligence & Visualization**
 Iteration 2 evolved the platform from a storage tool into an active intelligence system using automated extraction and graph visualization.
 
 Automated Concept Extraction: A backend NLP pipeline that identifies core keywords and concepts from note content upon saving.

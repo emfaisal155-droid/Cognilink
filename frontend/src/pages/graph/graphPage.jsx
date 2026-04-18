@@ -38,7 +38,7 @@ export default function GraphPage() {
       // Example: /api/graph/{username}
       const url = filterNoteId === 'all' 
         ? `https://localhost:7174/api/graph/${user}` 
-        : `https://localhost:7174/api/graph/filter?noteId=${filterNoteId}`;
+        : `https://localhost:7174/api/graph/filter?noteId=${filterNoteId}&username=${user}`;
 
       try {
         const response = await fetch(url);
@@ -63,56 +63,89 @@ export default function GraphPage() {
     fetchGraph();
   }, [filterNoteId]);
 
+  const [showExportMenu, setShowExportMenu] = useState(false);
+
+  const handleExport = (format) => {
+    console.log(`Exporting as ${format}...`);
+    setShowExportMenu(false);
+  };
+
   return (
-    <div style={pageLayout}>
-      <header style={headerStyle}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <button onClick={() => navigate('/dashboard')} style={backBtnStyle}>← Back</button>
-            <h2 style={{ color: '#D35400', margin: 0 }}>Knowledge Map</h2>
+    <div className="dashboard-container">
+      {/* Primary Sidebar */}
+      <nav className="side-menu">
+        <div className="menu-group">
+          <h3>Menu</h3>
+          <ul>
+            <li onClick={() => navigate('/dashboard')} style={{ cursor: 'pointer' }}>
+              Notes
+            </li>
+            <li className="active" style={{ cursor: 'pointer' }}>
+              Graphs
+            </li>
+            <li>Settings</li>
+          </ul>
         </div>
-        
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <select 
-            value={filterNoteId} 
-            onChange={(e) => setFilterNoteId(e.target.value)}
-            style={selectStyle}
-          >
-            <option value="all">Full Knowledge Graph</option>
-            {notes.map(note => (
-                <option key={note.id || note.Id} value={note.id || note.Id}>
-                    Focus: {note.title || note.Title}
-                </option>
-            ))}
-          </select>
+      </nav>
 
-          <button style={btnStyle} onClick={() => window.print()}>Export PDF</button>
+      {/* Secondary Sidebar */}
+      <aside className="doc-sidebar">
+        <div className="doc-section orange-bg" style={{ paddingTop: '20px' }}>
+          <button className="nav-item active-doc">Knowledge Map</button>
         </div>
-      </header>
+      </aside>
 
-      <main style={canvasArea}>
-        {loading ? (
-          <div style={loadingOverlay}>Mapping hidden connections...</div>
-        ) : (
-          <GraphCanvas data={graphData} />
-        )}
+      {/* Main Workspace */}
+      <main className="workspace" style={{ display: 'flex', flexDirection: 'column', padding: '20px' }}>
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', borderBottom: '2px solid #000', paddingBottom: '10px' }}>
+          <h2 style={{ margin: 0, fontWeight: 'bold' }}>Graph</h2>
+          
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <input 
+              type="text" 
+              placeholder="Search..." 
+              style={{ padding: '8px', border: '1px solid #000' }}
+            />
+            
+            <select 
+              value={filterNoteId} 
+              onChange={(e) => setFilterNoteId(e.target.value)}
+              style={{ padding: '8px', border: '1px solid #000', backgroundColor: '#eee', cursor: 'pointer' }}
+            >
+              <option value="all">Filter: All</option>
+              {notes.map(note => (
+                  <option key={note.id || note.Id} value={note.id || note.Id}>
+                      {note.title || note.Title}
+                  </option>
+              ))}
+            </select>
+
+            <div style={{ position: 'relative' }}>
+              <button 
+                onClick={() => setShowExportMenu(!showExportMenu)}
+                style={{ padding: '8px 15px', backgroundColor: '#333', color: '#fff', border: '1px solid #000', cursor: 'pointer' }}
+              >
+                Export
+              </button>
+              {showExportMenu && (
+                <div style={{ position: 'absolute', top: '100%', right: 0, backgroundColor: '#ccc', border: '2px solid #000', width: '100px', zIndex: 100, marginTop: '5px' }}>
+                  <div onClick={() => handleExport('PNG')} style={{ padding: '8px', cursor: 'pointer', borderBottom: '1px solid #999', backgroundColor: '#bbb', margin: '2px' }}>PNG</div>
+                  <div onClick={() => handleExport('SVG')} style={{ padding: '8px', cursor: 'pointer', borderBottom: '1px solid #999', backgroundColor: '#bbb', margin: '2px' }}>SVG</div>
+                  <div onClick={() => handleExport('JPG')} style={{ padding: '8px', cursor: 'pointer', backgroundColor: '#bbb', margin: '2px' }}>JPG</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </header>
+
+        <div style={{ flex: 1, position: 'relative', border: '2px solid #D35400', backgroundColor: '#fff', overflow: 'hidden' }}>
+          {loading ? (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', fontStyle: 'italic', color: '#D35400' }}>Mapping hidden connections...</div>
+          ) : (
+            <GraphCanvas data={graphData} />
+          )}
+        </div>
       </main>
-
-      <footer style={insightPanel}>
-        <p style={{ fontSize: '0.85rem', color: '#666' }}>
-          <strong>Relationship Insight:</strong> Visualizing 
-          {" "}{graphData.edges.length} connections across {graphData.nodes.length} concepts.
-        </p>
-      </footer>
     </div>
   );
 }
-
-// Styles
-const pageLayout = { display: 'flex', flexDirection: 'column', height: '100vh', padding: '20px', boxSizing: 'border-box' };
-const headerStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' };
-const canvasArea = { flex: 1, backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #eee', position: 'relative', overflow: 'hidden' };
-const selectStyle = { padding: '8px', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer' };
-const btnStyle = { padding: '8px 15px', backgroundColor: '#fff', border: '1px solid #333', cursor: 'pointer', borderRadius: '4px' };
-const backBtnStyle = { padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer', color: '#D35400', fontWeight: 'bold' };
-const insightPanel = { marginTop: '15px', padding: '10px', borderTop: '1px solid #eee' };
-const loadingOverlay = { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', fontStyle: 'italic', color: '#D35400' };

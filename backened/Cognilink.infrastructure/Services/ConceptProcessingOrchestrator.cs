@@ -1,4 +1,4 @@
-﻿using Cognilink.core;
+using Cognilink.core;
 using Cognilink.infrastructure;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -48,14 +48,15 @@ namespace Cognilink.infrastructure.Services
             {
                 Name = kv.Key,
                 Frequency = kv.Value,
-                NoteId = note.Id
+                NoteId = note.Id,
+                UserId = note.UserId
             }).ToList();
 
             await _context.Concepts.AddRangeAsync(newConcepts);
             await _context.SaveChangesAsync();
 
             // Detect relationships
-            await DetectRelationshipsAsync(note.Id, newConcepts);
+            await DetectRelationshipsAsync(note.Id, newConcepts, note.UserId);
         }
 
         public async Task RemoveNoteConceptsAsync(int noteId)
@@ -65,7 +66,7 @@ namespace Cognilink.infrastructure.Services
             await _context.SaveChangesAsync();
         }
 
-        private async Task DetectRelationshipsAsync(int noteId, List<Concept> newConcepts)
+        private async Task DetectRelationshipsAsync(int noteId, List<Concept> newConcepts, int userId)
         {
             var otherConcepts = await _context.Concepts
                 .Where(c => c.NoteId != noteId)
@@ -89,7 +90,8 @@ namespace Cognilink.infrastructure.Services
                             {
                                 SourceConceptId = concept.Id,
                                 TargetConceptId = other.Id,
-                                SimilarityScore = 1.0
+                                SimilarityScore = 1.0,
+                                UserId = userId
                             });
                         }
                     }

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Cognilink.core;
 using Cognilink.infrastructure;
 using Cognilink.infrastructure.Services;
@@ -72,6 +72,7 @@ namespace Cognilink_ASP.NET_.Controllers
 
             note.Title = dto.Title;
             note.Content = dto.Content;
+            note.IsDeleted = dto.IsDeleted;
             await _context.SaveChangesAsync();
 
             // Ammara: re-extract concepts when note is updated
@@ -95,13 +96,24 @@ namespace Cognilink_ASP.NET_.Controllers
             if (note.UserId != user.Id)
                 return StatusCode(403, "You can only delete your own notes.");
 
-            // Ammara: remove concepts before deleting note
-            await _orchestrator.RemoveNoteConceptsAsync(note.Id);
+            if (!note.IsDeleted)
+            {
+                // Soft delete
+                note.IsDeleted = true;
+                await _context.SaveChangesAsync();
+                return Ok("Note moved to trash.");
+            }
+            else
+            {
+                // Hard delete
+                // Ammara: remove concepts before deleting note
+                await _orchestrator.RemoveNoteConceptsAsync(note.Id);
 
-            _context.Notes.Remove(note);
-            await _context.SaveChangesAsync();
+                _context.Notes.Remove(note);
+                await _context.SaveChangesAsync();
 
-            return Ok("Note deleted successfully.");
+                return Ok("Note permanently deleted.");
+            }
         }
     }
 
@@ -110,6 +122,7 @@ namespace Cognilink_ASP.NET_.Controllers
         public string Username { get; set; } = string.Empty;
         public string Title { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
+        public bool IsDeleted { get; set; } = false;
     }
 
     public class DeleteDto

@@ -15,6 +15,8 @@ namespace Cognilink.core
        // Foreign Key
        public int UserId { get; set; }
    
+       public bool IsDeleted { get; set; } = false;
+
        public virtual User User { get; set; } = null!;
    }
 }

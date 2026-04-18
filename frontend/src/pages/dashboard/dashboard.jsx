@@ -33,7 +33,7 @@ export default function Dashboard() {
           title: n.title || n.Title || "Untitled",
           content: n.content || n.Content || "",
           date: n.date || n.Date || n.createdAt || n.CreatedAt || "",
-          deleted: n.deleted || n.Deleted || false
+          deleted: n.isDeleted || n.IsDeleted || n.deleted || n.Deleted || false
         }));
         
         setNotes(normalizedNotes);
@@ -130,7 +130,7 @@ export default function Dashboard() {
         title: n.title || n.Title,
         content: n.content || n.Content,
         date: n.date || n.Date,
-        deleted: n.deleted || n.Deleted || false
+        deleted: n.isDeleted || n.IsDeleted || n.deleted || n.Deleted || false
       }));
 
       setNotes(normalizedNotes);
@@ -148,8 +148,11 @@ export default function Dashboard() {
     e.stopPropagation();
     if (window.confirm(view === 'trash' ? "Permanently delete?" : "Move to Trash?")) {
       try {
+        const user = localStorage.getItem('username');
         const response = await fetch(`https://localhost:7174/api/notes/${id}`, {
-          method: 'DELETE'
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: user })
         });
         if (response.ok) fetchDashboardData();
       } catch (err) {
@@ -158,10 +161,21 @@ export default function Dashboard() {
     }
   };
 
-  const restoreNote = (e, id) => {
+  const restoreNote = async (e, id) => {
     e.stopPropagation();
-    setNotes(notes.map(n => n.id === id ? { ...n, deleted: false } : n));
-    setView('active');
+    const noteToRestore = notes.find(n => n.id === id);
+    if (!noteToRestore) return;
+    try {
+        const user = localStorage.getItem('username');
+        const response = await fetch(`https://localhost:7174/api/notes/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...noteToRestore, username: user, isDeleted: false })
+        });
+        if (response.ok) fetchDashboardData();
+    } catch (err) {
+        console.error("Restore failed:", err);
+    }
   };
 
   const openEditMode = (note) => {

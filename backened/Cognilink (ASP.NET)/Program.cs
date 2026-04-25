@@ -35,6 +35,16 @@ builder.Services.AddScoped<INoteRepository, NoteRepository>();  //This allows Am
 builder.Services.AddAuthentication();
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<ConceptProcessingOrchestrator>(); //iteration2
+
+builder.Services.AddScoped<RelationshipDetectionService>();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReact", policy =>
+        policy.WithOrigins("http://localhost:5173") // Vite default port
+              .AllowAnyHeader()
+              .AllowAnyMethod());
+});
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -55,6 +65,11 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+
+
+
+app.UseCors("AllowReact");
 
 app.Run();
 

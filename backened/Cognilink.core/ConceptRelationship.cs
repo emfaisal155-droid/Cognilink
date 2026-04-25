@@ -6,15 +6,26 @@ using System.Threading.Tasks;
 
 namespace Cognilink.core
 {
-    public class ConceptRelationship
-    {
-        public int Id { get; set; }
-        public int SourceConceptId { get; set; }
-        public int TargetConceptId { get; set; }
-        public double SimilarityScore { get; set; }
-        public int UserId { get; set; }
+        public class ConceptRelationship
+        {
+            public int Id { get; set; }
+    
+            public int SourceConceptId { get; set; }
+            [ForeignKey("SourceConceptId")]
+            public Concept? SourceConcept { get; set; }
+    
+            public int TargetConceptId { get; set; }
+            [ForeignKey("TargetConceptId")]
+            public Concept? TargetConcept { get; set; }
+    
+            public double SimilarityScore { get; set; }
+    
+            // true = manually created by user, false = AI-generated
+            public bool IsManual { get; set; } = false;
+    
+            public int UserId { get; set; }
+            [ForeignKey("UserId")]
+            public User? User { get; set; }
+        }
 
-        public Concept SourceConcept { get; set; } = null!;
-        public Concept TargetConcept { get; set; } = null!;
-    }
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; 
+import { useNavigate, Link } from 'react-router-dom'; 
 import NoteEditor from '../../components/noteEditor';
 import StatCard from '../../components/statCard';
 import RecentConcepts from '../../components/recentConcepts';
@@ -156,13 +156,19 @@ export default function Dashboard() {
           <h3>Menu</h3>
           <ul>
             <li className={view === 'active' || view === 'trash' ? "active" : ""} 
-              onClick={() => { setView('active'); setSearchTerm(''); }}>
+              onClick={() => { setView('active'); setSearchTerm(''); }} style={{ cursor: 'pointer' }}>
               Notes
             </li>
-            <li onClick={() => navigate('/graph')} style={{ cursor: 'pointer' }}>
-              Graphs
-            </li>
-            <li>Settings</li>
+            <Link to="/graph" style={{ textDecoration: 'none', color: 'inherit' }}>
+              <li style={{ cursor: 'pointer' }}>
+                Graphs
+              </li>
+            </Link>
+            <Link to="/settings" style={{ textDecoration: 'none', color: 'inherit' }}>
+              <li style={{ cursor: 'pointer' }}>
+                Settings
+              </li>
+            </Link>
           </ul>
         </div>
       </nav>

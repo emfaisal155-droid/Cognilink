@@ -17,10 +17,14 @@ namespace Cognilink_ASP.NET_.Controllers
             _context = context;
         }
 
-        // GET api/graph/{userId}
-        [HttpGet("{userId}")]
-        public async Task<ActionResult<GraphDto>> GetGraph(int userId)
+        // GET api/graph/{username}
+        [HttpGet("{username}")]
+        public async Task<ActionResult<GraphDto>> GetGraph(string username)
         {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
+            if (user == null) return Unauthorized();
+            int userId = user.Id;
+
             var concepts = await _context.Concepts
                 .Where(c => c.UserId == userId)
                 .ToListAsync();
@@ -105,9 +109,13 @@ namespace Cognilink_ASP.NET_.Controllers
         }
 
         // User Story 4.2 — JSON Export
-        [HttpGet("export/{userId}")]
-        public async Task<IActionResult> ExportGraph(int userId)
+        [HttpGet("export/{username}")]
+        public async Task<IActionResult> ExportGraph(string username)
         {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
+            if (user == null) return Unauthorized();
+            int userId = user.Id;
+
             var concepts = await _context.Concepts
                 .Where(c => c.UserId == userId)
                 .ToListAsync();

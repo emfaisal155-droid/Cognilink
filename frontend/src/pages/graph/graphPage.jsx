@@ -1,20 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // Added for back navigation
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import GraphCanvas from '../../components/graphCanvas';
 
 export default function GraphPage() {
   const [graphData, setGraphData] = useState({ nodes: [], edges: [] });
   const [filterNoteId, setFilterNoteId] = useState('all'); 
+  const [filterType, setFilterType] = useState('none');
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
-  const [notes, setNotes] = useState([]); // To populate the dropdown dynamically
+  const [notes, setNotes] = useState([]); 
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const navigate = useNavigate();
+  const graphCanvasRef = useRef();
 
   useEffect(() => {
     const fetchInitialData = async () => {
       const user = localStorage.getItem('username');
       if (!user) return;
 
-      // Fetch notes list to populate the dropdown filter
       try {
         const res = await fetch(`https://localhost:7174/api/notes/${user}`);
         if (res.ok) {
@@ -34,8 +37,6 @@ export default function GraphPage() {
       setLoading(true);
       const user = localStorage.getItem('username');
       
-      // Update URLs to include the user context if your backend requires it
-      // Example: /api/graph/{username}
       const url = filterNoteId === 'all' 
         ? `https://localhost:7174/api/graph/${user}` 
         : `https://localhost:7174/api/graph/filter?noteId=${filterNoteId}&username=${user}`;
@@ -45,7 +46,6 @@ export default function GraphPage() {
         if (response.ok) {
           const data = await response.json();
           
-          // NORMALIZE: Ensure properties match lowercase keys used by most Graph libraries
           const normalizedData = {
             nodes: data.nodes || data.Nodes || [],
             edges: data.edges || data.Edges || []
@@ -61,12 +61,57 @@ export default function GraphPage() {
     };
 
     fetchGraph();
-  }, [filterNoteId]);
+  }, [filterNoteId, refreshTrigger]);
+
+  const filteredGraphData = useMemo(() => {
+    let nodes = [...graphData.nodes];
+    if (filterType === 'important') {
+      nodes = nodes.filter(n => n.frequency >= 2);
+    } else if (filterType === 'recent') {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      nodes = nodes.filter(n => new Date(n.createdAt) >= thirtyDaysAgo);
+    }
+    
+    const nodeIds = new Set(nodes.map(n => n.id));
+    const edges = graphData.edges.filter(e => nodeIds.has(e.source.id || e.source) && nodeIds.has(e.target.id || e.target));
+    
+    return { nodes, edges };
+  }, [graphData, filterType]);
 
   const [showExportMenu, setShowExportMenu] = useState(false);
 
-  const handleExport = (format) => {
-    console.log(`Exporting as ${format}...`);
+  const handleExport = async (format) => {
+    if (format === 'JSON_FILTERED') {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(filteredGraphData, null, 2));
+      const downloadAnchorNode = document.createElement('a');
+      downloadAnchorNode.setAttribute("href", dataStr);
+      downloadAnchorNode.setAttribute("download", "cognilink_filtered_graph.json");
+      document.body.appendChild(downloadAnchorNode);
+      downloadAnchorNode.click();
+      downloadAnchorNode.remove();
+    } else if (format === 'JSON_FULL') {
+      const user = localStorage.getItem('username');
+      try {
+        const res = await fetch(`https://localhost:7174/api/graph/export/${user}`);
+        if (res.ok) {
+          const json = await res.json();
+          const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(json, null, 2));
+          const downloadAnchorNode = document.createElement('a');
+          downloadAnchorNode.setAttribute("href", dataStr);
+          downloadAnchorNode.setAttribute("download", "cognilink_full_backup.json");
+          document.body.appendChild(downloadAnchorNode);
+          downloadAnchorNode.click();
+          downloadAnchorNode.remove();
+        } else {
+          alert('Failed to export full graph from server.');
+        }
+      } catch (err) {
+        console.error("Export failed:", err);
+      }
+    } else if (graphCanvasRef.current && graphCanvasRef.current.exportGraph) {
+      graphCanvasRef.current.exportGraph(format);
+    }
     setShowExportMenu(false);
   };
 
@@ -77,13 +122,19 @@ export default function GraphPage() {
         <div className="menu-group">
           <h3>Menu</h3>
           <ul>
-            <li onClick={() => navigate('/dashboard')} style={{ cursor: 'pointer' }}>
-              Notes
-            </li>
+            <Link to="/dashboard" style={{ textDecoration: 'none', color: 'inherit' }}>
+              <li style={{ cursor: 'pointer' }}>
+                Notes
+              </li>
+            </Link>
             <li className="active" style={{ cursor: 'pointer' }}>
               Graphs
             </li>
-            <li>Settings</li>
+            <Link to="/settings" style={{ textDecoration: 'none', color: 'inherit' }}>
+              <li style={{ cursor: 'pointer' }}>
+                Settings
+              </li>
+            </Link>
           </ul>
         </div>
       </nav>
@@ -103,16 +154,28 @@ export default function GraphPage() {
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
             <input 
               type="text" 
-              placeholder="Search..." 
+              placeholder="Focus Search..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               style={{ padding: '8px', border: '1px solid #000' }}
             />
+            
+            <select 
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              style={{ padding: '8px', border: '1px solid #000', backgroundColor: '#eee', cursor: 'pointer' }}
+            >
+              <option value="none">Sort: All</option>
+              <option value="important">High Importance</option>
+              <option value="recent">Recent (30 Days)</option>
+            </select>
             
             <select 
               value={filterNoteId} 
               onChange={(e) => setFilterNoteId(e.target.value)}
               style={{ padding: '8px', border: '1px solid #000', backgroundColor: '#eee', cursor: 'pointer' }}
             >
-              <option value="all">Filter: All</option>
+              <option value="all">Filter Note: All</option>
               {notes.map(note => (
                   <option key={note.id || note.Id} value={note.id || note.Id}>
                       {note.title || note.Title}
@@ -128,10 +191,10 @@ export default function GraphPage() {
                 Export
               </button>
               {showExportMenu && (
-                <div style={{ position: 'absolute', top: '100%', right: 0, backgroundColor: '#ccc', border: '2px solid #000', width: '100px', zIndex: 100, marginTop: '5px' }}>
-                  <div onClick={() => handleExport('PNG')} style={{ padding: '8px', cursor: 'pointer', borderBottom: '1px solid #999', backgroundColor: '#bbb', margin: '2px' }}>PNG</div>
-                  <div onClick={() => handleExport('SVG')} style={{ padding: '8px', cursor: 'pointer', borderBottom: '1px solid #999', backgroundColor: '#bbb', margin: '2px' }}>SVG</div>
-                  <div onClick={() => handleExport('JPG')} style={{ padding: '8px', cursor: 'pointer', backgroundColor: '#bbb', margin: '2px' }}>JPG</div>
+                <div style={{ position: 'absolute', top: '100%', right: 0, backgroundColor: '#ccc', border: '2px solid #000', width: '180px', zIndex: 100, marginTop: '5px' }}>
+                  <div onClick={() => handleExport('PNG')} style={{ padding: '8px', cursor: 'pointer', borderBottom: '1px solid #999', backgroundColor: '#bbb', margin: '2px' }}>Export PNG</div>
+                  <div onClick={() => handleExport('JSON_FILTERED')} style={{ padding: '8px', cursor: 'pointer', borderBottom: '1px solid #999', backgroundColor: '#bbb', margin: '2px' }}>JSON (Current View)</div>
+                  <div onClick={() => handleExport('JSON_FULL')} style={{ padding: '8px', cursor: 'pointer', backgroundColor: '#bbb', margin: '2px' }}>JSON (Full Backup)</div>
                 </div>
               )}
             </div>
@@ -142,7 +205,13 @@ export default function GraphPage() {
           {loading ? (
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', fontStyle: 'italic', color: '#D35400' }}>Mapping hidden connections...</div>
           ) : (
-            <GraphCanvas data={graphData} />
+            <GraphCanvas 
+              ref={graphCanvasRef} 
+              data={filteredGraphData} 
+              searchQuery={searchQuery} 
+              onGraphUpdate={() => setRefreshTrigger(prev => prev + 1)} 
+              onViewConnected={(node) => setSearchQuery(node.label)}
+            />
           )}
         </div>
       </main>

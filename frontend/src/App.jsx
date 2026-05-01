@@ -21,7 +21,7 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           
           {/* NEW: Graph Interface Route (Sub-story 3.1) */}
-          <Route path="/graphs" element={<GraphPage />} />
+          <Route path="/graph" element={<GraphPage />} />
           
           <Route path="/" element={<Navigate to="/login" />} />
         </Routes>

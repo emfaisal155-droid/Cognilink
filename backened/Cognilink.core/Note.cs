@@ -1,14 +1,23 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
 namespace Cognilink.core
 {
-    public class Note
-    {
-        public int Id { get; set; }
-        public string Title { get; set; } = string.Empty;
-        public string Content { get; set; } = string.Empty;
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public bool Deleted { get; set; } = false;
-        public int UserId { get; set; }
-        public User User { get; set; } = null!;
-        public ICollection<Concept> Concepts { get; set; } = new List<Concept>();
-    }
+      public class Note
+   {
+       public int Id { get; set; }
+       public string Title { get; set; } = string.Empty;
+       public string Content { get; set; } = string.Empty;
+   
+       // Foreign Key
+       public int UserId { get; set; }
+   
+       public bool IsDeleted { get; set; } = false;
+
+       public virtual User User { get; set; } = null!;
+   }
 }
+

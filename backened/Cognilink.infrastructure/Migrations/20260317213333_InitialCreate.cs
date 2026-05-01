@@ -1,9 +1,12 @@
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace Cognilink.infrastructure.Migrations
 {
+    [DbContext(typeof(AppDbContext))]
+    [Migration("20260317213333_InitialCreate")]
     /// <inheritdoc />
     public partial class InitialCreate : Migration
     {

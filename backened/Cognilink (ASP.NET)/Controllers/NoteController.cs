@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Cognilink.core;
 using Cognilink.infrastructure;
 using Cognilink.infrastructure.Services;
@@ -31,9 +31,7 @@ namespace Cognilink_ASP.NET_.Controllers
             {
                 Title = dto.Title,
                 Content = dto.Content,
-                UserId = user.Id,
-                CreatedAt = DateTime.UtcNow,
-                Deleted = false
+                UserId = user.Id
             };
 
             _context.Notes.Add(note);
@@ -53,18 +51,7 @@ namespace Cognilink_ASP.NET_.Controllers
             if (user == null)
                 return Unauthorized("User not found.");
 
-            var notes = _context.Notes
-                .Where(n => n.UserId == user.Id)
-                .Select(n => new {
-                    id = n.Id,
-                    title = n.Title,
-                    content = n.Content,
-                    createdAt = n.CreatedAt,
-                    deleted = n.Deleted,
-                    userId = n.UserId
-                })
-                .ToList();
-
+            var notes = _context.Notes.Where(n => n.UserId == user.Id).ToList();
             return Ok(notes);
         }
 
@@ -85,37 +72,48 @@ namespace Cognilink_ASP.NET_.Controllers
 
             note.Title = dto.Title;
             note.Content = dto.Content;
+            note.IsDeleted = dto.IsDeleted;
             await _context.SaveChangesAsync();
 
             // Ammara: re-extract concepts when note is updated
             await _orchestrator.ProcessNoteAsync(note);
 
-            return Ok(new
-            {
-                id = note.Id,
-                title = note.Title,
-                content = note.Content,
-                createdAt = note.CreatedAt,
-                deleted = note.Deleted,
-                userId = note.UserId
-            });
+            return Ok(note);
         }
 
         // DELETE: api/notes/{id}
-        // Fixed: removed [FromBody] since frontend sends no body
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteNote(int id)
+        public async Task<IActionResult> DeleteNote(int id, [FromBody] DeleteDto dto)
         {
+            var user = _context.Users.FirstOrDefault(u => u.Username == dto.Username);
+            if (user == null)
+                return Unauthorized("User not found.");
+
             var note = _context.Notes.FirstOrDefault(n => n.Id == id);
             if (note == null)
                 return NotFound("Note not found.");
 
-            // Ammara: remove concepts before deleting note
-            await _orchestrator.RemoveNoteConceptsAsync(note.Id);
-            _context.Notes.Remove(note);
-            await _context.SaveChangesAsync();
+            if (note.UserId != user.Id)
+                return StatusCode(403, "You can only delete your own notes.");
 
-            return Ok("Note deleted successfully.");
+            if (!note.IsDeleted)
+            {
+                // Soft delete
+                note.IsDeleted = true;
+                await _context.SaveChangesAsync();
+                return Ok("Note moved to trash.");
+            }
+            else
+            {
+                // Hard delete
+                // Ammara: remove concepts before deleting note
+                await _orchestrator.RemoveNoteConceptsAsync(note.Id);
+
+                _context.Notes.Remove(note);
+                await _context.SaveChangesAsync();
+
+                return Ok("Note permanently deleted.");
+            }
         }
     }
 
@@ -124,6 +122,7 @@ namespace Cognilink_ASP.NET_.Controllers
         public string Username { get; set; } = string.Empty;
         public string Title { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
+        public bool IsDeleted { get; set; } = false;
     }
 
     public class DeleteDto

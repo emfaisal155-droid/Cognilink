@@ -9,37 +9,48 @@ using Cognilink.core;
 
 namespace Cognilink.infrastructure
 {
-
-    
-    public class AppDbContext : DbContext
-    {
-       // public DbSet<Concept> Concepts { get; set; }
-
-        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
-
-        public DbSet<User> Users { get; set; }
-        public DbSet<Note> Notes { get; set; }
-
-        //iteration2
-        public DbSet<Concept> Concepts { get; set; }
-        public DbSet<ConceptRelationship> ConceptRelationships { get; set; }
-        
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        public class AppDbContext : DbContext
         {
-            base.OnModelCreating(modelBuilder);
-        
-            modelBuilder.Entity<ConceptRelationship>()
-                .HasOne(r => r.SourceConcept)
-                .WithMany(c => c.SourceRelationships)
-                .HasForeignKey(r => r.SourceConceptId)
-                .OnDelete(DeleteBehavior.Restrict);
-        
-            modelBuilder.Entity<ConceptRelationship>()
-                .HasOne(r => r.TargetConcept)
-                .WithMany(c => c.TargetRelationships)
-                .HasForeignKey(r => r.TargetConceptId)
-                .OnDelete(DeleteBehavior.Restrict);
-        }
-    }
+            public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+    
+            public DbSet<User> Users { get; set; }
+            public DbSet<Note> Notes { get; set; }
+            public DbSet<Concept> Concepts { get; set; }
+            public DbSet<ConceptRelationship> ConceptRelationships { get; set; }
+    
+            protected override void OnModelCreating(ModelBuilder modelBuilder)
+            {
+    
+                modelBuilder.Entity<Concept>()
+                   .HasOne(c => c.User)
+                   .WithMany()
+                   .HasForeignKey(c => c.UserId)
+                   .OnDelete(DeleteBehavior.Restrict);
+    
+                modelBuilder.Entity<Concept>()
+                    .HasOne(c => c.Note)
+                    .WithMany()
+                    .HasForeignKey(c => c.NoteId)
+                    .OnDelete(DeleteBehavior.Restrict);
+    
+    
+                modelBuilder.Entity<ConceptRelationship>()
+                    .HasOne(cr => cr.SourceConcept)
+                    .WithMany(c => c.SourceEdges)
+                    .HasForeignKey(cr => cr.SourceConceptId)
+                    .OnDelete(DeleteBehavior.Restrict); // prevent cascade conflict
+    
+                modelBuilder.Entity<ConceptRelationship>()
+                    .HasOne(cr => cr.TargetConcept)
+                    .WithMany(c => c.TargetEdges)
+                    .HasForeignKey(cr => cr.TargetConceptId)
+                    .OnDelete(DeleteBehavior.Restrict);
+    
+                // Unique constraint: prevent duplicate edges
+                modelBuilder.Entity<ConceptRelationship>()
+                    .HasIndex(cr => new { cr.SourceConceptId, cr.TargetConceptId, cr.UserId })
+                    .IsUnique();
+            }
+
 }
 

@@ -81,5 +81,56 @@ GO
 COMMIT;
 GO
 
+BEGIN TRANSACTION;
+GO
 
+ALTER TABLE [Notes] ADD [IsDeleted] bit NOT NULL DEFAULT CAST(0 AS bit);
+GO
+
+INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+VALUES (N'20260418064512_AddSoftDeleteToNotes', N'8.0.25');
+GO
+
+COMMIT;
+GO
+
+BEGIN TRANSACTION;
+GO
+
+ALTER TABLE [Concepts] DROP CONSTRAINT [FK_Concepts_Notes_NoteId];
+GO
+
+DROP INDEX [IX_ConceptRelationships_SourceConceptId] ON [ConceptRelationships];
+GO
+
+ALTER TABLE [Concepts] ADD [CreatedAt] datetime2 NOT NULL DEFAULT '0001-01-01T00:00:00.0000000';
+GO
+
+ALTER TABLE [ConceptRelationships] ADD [IsManual] bit NOT NULL DEFAULT CAST(0 AS bit);
+GO
+
+CREATE INDEX [IX_Concepts_UserId] ON [Concepts] ([UserId]);
+GO
+
+CREATE UNIQUE INDEX [IX_ConceptRelationships_SourceConceptId_TargetConceptId_UserId] ON [ConceptRelationships] ([SourceConceptId], [TargetConceptId], [UserId]);
+GO
+
+CREATE INDEX [IX_ConceptRelationships_UserId] ON [ConceptRelationships] ([UserId]);
+GO
+
+ALTER TABLE [ConceptRelationships] ADD CONSTRAINT [FK_ConceptRelationships_Users_UserId] FOREIGN KEY ([UserId]) REFERENCES [Users] ([Id]) ON DELETE CASCADE;
+GO
+
+ALTER TABLE [Concepts] ADD CONSTRAINT [FK_Concepts_Notes_NoteId] FOREIGN KEY ([NoteId]) REFERENCES [Notes] ([Id]) ON DELETE NO ACTION;
+GO
+
+ALTER TABLE [Concepts] ADD CONSTRAINT [FK_Concepts_Users_UserId] FOREIGN KEY ([UserId]) REFERENCES [Users] ([Id]) ON DELETE NO ACTION;
+GO
+
+INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+VALUES (N'20260425211939_AddIsManualField', N'8.0.25');
+GO
+
+COMMIT;
+GO
 

@@ -1,11 +1,11 @@
 using Cognilink.core;
+using Cognilink.core.DTOS;
 using Cognilink.infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cognilink_ASP.NET_.Controllers
 {
-    
     [ApiController]
     [Route("api/[controller]")]
     public class GraphController : ControllerBase
@@ -18,7 +18,6 @@ namespace Cognilink_ASP.NET_.Controllers
         }
 
         // GET api/graph/{userId}
-        // Returns full graph data for the frontend visualizer
         [HttpGet("{userId}")]
         public async Task<ActionResult<GraphDto>> GetGraph(int userId)
         {
@@ -65,6 +64,80 @@ namespace Cognilink_ASP.NET_.Controllers
             return Ok(graphDto);
         }
 
+        // User Story 2.2 — Filter graph by noteId
+        [HttpGet("filter")]
+        public async Task<ActionResult<GraphDto>> GetFilteredGraph(
+            [FromQuery] int noteId, [FromQuery] string username)
+        {
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Username == username);
+            if (user == null) return Unauthorized();
+
+            var concepts = await _context.Concepts
+                .Where(c => c.NoteId == noteId && c.UserId == user.Id)
+                .ToListAsync();
+
+            var conceptIds = concepts.Select(c => c.Id).ToHashSet();
+
+            var edges = await _context.ConceptRelationships
+                .Where(e => conceptIds.Contains(e.SourceConceptId)
+                         && conceptIds.Contains(e.TargetConceptId))
+                .ToListAsync();
+
+            return Ok(new GraphDto
+            {
+                Nodes = concepts.Select(c => new NodeDto
+                {
+                    id = c.Id,
+                    label = c.Name,
+                    frequency = c.Frequency,
+                    createdAt = c.CreatedAt
+                }).ToList(),
+                Edges = edges.Select(e => new EdgeDto
+                {
+                    id = e.Id,
+                    source = e.SourceConceptId,
+                    target = e.TargetConceptId,
+                    similarityScore = e.SimilarityScore,
+                    isManual = e.IsManual
+                }).ToList()
+            });
+        }
+
+        // User Story 4.2 — JSON Export
+        [HttpGet("export/{userId}")]
+        public async Task<IActionResult> ExportGraph(int userId)
+        {
+            var concepts = await _context.Concepts
+                .Where(c => c.UserId == userId)
+                .ToListAsync();
+
+            var edges = await _context.ConceptRelationships
+                .Where(e => e.UserId == userId)
+                .ToListAsync();
+
+            var export = new
+            {
+                exportedAt = DateTime.UtcNow,
+                nodes = concepts.Select(c => new {
+                    id = c.Id,
+                    label = c.Name,
+                    frequency = c.Frequency,
+                    createdAt = c.CreatedAt
+                }),
+                edges = edges.Select(e => new {
+                    id = e.Id,
+                    source = e.SourceConceptId,
+                    target = e.TargetConceptId,
+                    similarityScore = e.SimilarityScore,
+                    isManual = e.IsManual
+                })
+            };
+
+            return Ok(export);
+        }
+
+        // PATCH api/graph/node/{nodeId}/rename
         [HttpPatch("node/{nodeId}/rename")]
         public async Task<IActionResult> RenameNode(int nodeId, [FromBody] RenameNodeDto dto)
         {
@@ -82,7 +155,6 @@ namespace Cognilink_ASP.NET_.Controllers
         }
 
         // DELETE api/graph/node/{nodeId}
-        // Sub-Story 3.1: manual deletion
         [HttpDelete("node/{nodeId}")]
         public async Task<IActionResult> DeleteNode(int nodeId)
         {
@@ -94,7 +166,6 @@ namespace Cognilink_ASP.NET_.Controllers
             if (concept == null)
                 return NotFound(new { message = "Node not found." });
 
-            // Remove all connected edges first (data integrity)
             _context.ConceptRelationships.RemoveRange(concept.SourceEdges);
             _context.ConceptRelationships.RemoveRange(concept.TargetEdges);
             _context.Concepts.Remove(concept);
@@ -104,7 +175,6 @@ namespace Cognilink_ASP.NET_.Controllers
         }
 
         // DELETE api/graph/edge/{edgeId}
-        // Sub-Story 3.1: delete an edge
         [HttpDelete("edge/{edgeId}")]
         public async Task<IActionResult> DeleteEdge(int edgeId)
         {
@@ -119,22 +189,18 @@ namespace Cognilink_ASP.NET_.Controllers
         }
 
         // POST api/graph/edge/manual
-        // Sub-Story 3.2: Link Tool — manually connect two nodes
         [HttpPost("edge/manual")]
         public async Task<IActionResult> CreateManualEdge([FromBody] CreateManualEdgeDto dto)
         {
-            // Validate source != target
             if (dto.SourceConceptId == dto.TargetConceptId)
                 return BadRequest(new { message = "Source and target cannot be the same node." });
 
-            // Check if both nodes exist
             var sourceExists = await _context.Concepts.AnyAsync(c => c.Id == dto.SourceConceptId);
             var targetExists = await _context.Concepts.AnyAsync(c => c.Id == dto.TargetConceptId);
 
             if (!sourceExists || !targetExists)
                 return NotFound(new { message = "One or both nodes do not exist." });
 
-            // Check for duplicate edge (either direction)
             var duplicate = await _context.ConceptRelationships.AnyAsync(e =>
                 (e.SourceConceptId == dto.SourceConceptId && e.TargetConceptId == dto.TargetConceptId) ||
                 (e.SourceConceptId == dto.TargetConceptId && e.TargetConceptId == dto.SourceConceptId));
@@ -142,14 +208,13 @@ namespace Cognilink_ASP.NET_.Controllers
             if (duplicate)
                 return Conflict(new { message = "A relationship between these nodes already exists." });
 
-            // Get the userId from either node
             var sourceConcept = await _context.Concepts.FindAsync(dto.SourceConceptId);
 
             var edge = new ConceptRelationship
             {
                 SourceConceptId = dto.SourceConceptId,
                 TargetConceptId = dto.TargetConceptId,
-                SimilarityScore = 1.0, // manual = full confidence
+                SimilarityScore = 1.0,
                 IsManual = true,
                 UserId = sourceConcept!.UserId
             };
@@ -166,5 +231,4 @@ namespace Cognilink_ASP.NET_.Controllers
             });
         }
     }
-
 }

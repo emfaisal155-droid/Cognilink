@@ -15,7 +15,6 @@ export default function Dashboard() {
   const [stats, setStats] = useState({ totalNodes: 0, totalEdges: 0 });
   const [recentConcepts, setRecentConcepts] = useState([]);
 
-  // 1. Fetch data helper using .text()
   const fetchDashboardData = async () => {
     const user = localStorage.getItem('username'); 
     if (!user) return;
@@ -25,21 +24,13 @@ export default function Dashboard() {
       if (response.ok) {
         const text = await response.text();
         const data = text ? JSON.parse(text) : [];
-        
-        // MAP DATA: This ensures that even if C# sends "Title", 
-        // your React code sees "title".
         const normalizedNotes = (Array.isArray(data) ? data : []).map(n => ({
           id: n.id || n.Id,
           title: n.title || n.Title || "Untitled",
           content: n.content || n.Content || "",
           date: n.date || n.Date || n.createdAt || n.CreatedAt || "",
-<<<<<<< HEAD
-          deleted: n.deleted || n.Deleted || false
-=======
           deleted: n.isDeleted || n.IsDeleted || n.deleted || n.Deleted || false
->>>>>>> 6b580854047b5f38610f14d8f6bd534b8addcd00
         }));
-        
         setNotes(normalizedNotes);
       }
 
@@ -67,11 +58,10 @@ export default function Dashboard() {
     return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
- /* const handleSaveNote = async (savedNote) => {
+  const handleSaveNote = async (savedNote) => {
     const isEditing = !!editNote;
     const user = localStorage.getItem('username');
     const timestamp = getCurrentTime();
-    
     const url = isEditing 
       ? `https://localhost:7174/api/notes/${savedNote.id}` 
       : `https://localhost:7174/api/notes`;
@@ -89,68 +79,25 @@ export default function Dashboard() {
       });
 
       if (response.ok) {
-        await fetchDashboardData(); // Refresh everything
+        const res = await fetch(`https://localhost:7174/api/notes/${user}`);
+        const text = await res.text();
+        const data = text ? JSON.parse(text) : [];
+        const normalizedNotes = (Array.isArray(data) ? data : []).map(n => ({
+          id: n.id || n.Id,
+          title: n.title || n.Title,
+          content: n.content || n.Content,
+          date: n.date || n.Date,
+          deleted: n.isDeleted || n.IsDeleted || n.deleted || n.Deleted || false
+        }));
+        setNotes(normalizedNotes);
       }
     } catch (err) {
-      console.error("Save failed:", err);
+      console.error("Failed to save note to database:", err);
     }
+
     setEditNote(null);
     setIsEditorOpen(false);
-  };*/
-
-  const handleSaveNote = async (savedNote) => {
-  const isEditing = !!editNote;
-  const user = localStorage.getItem('username');
-  const timestamp = getCurrentTime();
-  
-  // 1. Determine URL and Method
-  const url = isEditing 
-    ? `https://localhost:7174/api/notes/${savedNote.id}` 
-    : `https://localhost:7174/api/notes`;
-
-  try {
-    // 2. Send to Backend
-    const response = await fetch(url, {
-      method: isEditing ? 'PUT' : 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...savedNote,
-        username: user,
-        date: timestamp,
-        deleted: false
-      })
-    });
-
-    if (response.ok) {
-      // 3. Refresh the Dashboard List
-      // We fetch again to ensure the ID from the database is synced
-      const res = await fetch(`https://localhost:7174/api/notes/${user}`);
-      const text = await res.text();
-      const data = text ? JSON.parse(text) : [];
-      
-      // Normalize Case Sensitivity (Mapping PascalCase to camelCase)
-      const normalizedNotes = (Array.isArray(data) ? data : []).map(n => ({
-        id: n.id || n.Id,
-        title: n.title || n.Title,
-        content: n.content || n.Content,
-        date: n.date || n.Date,
-<<<<<<< HEAD
-        deleted: n.deleted || n.Deleted || false
-=======
-        deleted: n.isDeleted || n.IsDeleted || n.deleted || n.Deleted || false
->>>>>>> 6b580854047b5f38610f14d8f6bd534b8addcd00
-      }));
-
-      setNotes(normalizedNotes);
-    }
-  } catch (err) {
-    console.error("Failed to save note to database:", err);
-  }
-
-  // 4. Close Editor
-  setEditNote(null);
-  setIsEditorOpen(false);
-};
+  };
 
   const handleDelete = async (e, id) => {
     e.stopPropagation();
@@ -174,15 +121,15 @@ export default function Dashboard() {
     const noteToRestore = notes.find(n => n.id === id);
     if (!noteToRestore) return;
     try {
-        const user = localStorage.getItem('username');
-        const response = await fetch(`https://localhost:7174/api/notes/${id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...noteToRestore, username: user, isDeleted: false })
-        });
-        if (response.ok) fetchDashboardData();
+      const user = localStorage.getItem('username');
+      const response = await fetch(`https://localhost:7174/api/notes/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...noteToRestore, username: user, isDeleted: false })
+      });
+      if (response.ok) fetchDashboardData();
     } catch (err) {
-        console.error("Restore failed:", err);
+      console.error("Restore failed:", err);
     }
   };
 
@@ -208,10 +155,8 @@ export default function Dashboard() {
         <div className="menu-group">
           <h3>Menu</h3>
           <ul>
-            <li 
-              className={view === 'active' || view === 'trash' ? "active" : ""} 
-              onClick={() => { setView('active'); setSearchTerm(''); }}
-            >
+            <li className={view === 'active' || view === 'trash' ? "active" : ""} 
+              onClick={() => { setView('active'); setSearchTerm(''); }}>
               Notes
             </li>
             <li onClick={() => navigate('/graph')} style={{ cursor: 'pointer' }}>
@@ -224,26 +169,16 @@ export default function Dashboard() {
 
       <aside className="doc-sidebar">
         <div className="doc-section">
-          <input 
-            type="text" 
-            placeholder="Search notes..." 
-            className="search-field"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)} 
-            autoFocus
-          />
+          <input type="text" placeholder="Search notes..." className="search-field"
+            value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} autoFocus />
         </div>
         <div className="doc-section orange-bg" style={{ paddingTop: '20px' }}>
-          <button 
-            className={`nav-item ${view === 'active' ? "active-doc" : ""}`} 
-            onClick={() => { setView('active'); setSearchTerm(''); }}
-          >
+          <button className={`nav-item ${view === 'active' ? "active-doc" : ""}`} 
+            onClick={() => { setView('active'); setSearchTerm(''); }}>
             My Documents
           </button>
-          <button 
-            className={`nav-item ${view === 'trash' ? "active-doc" : ""}`} 
-            onClick={() => { setView('trash'); setSearchTerm(''); }}
-          >
+          <button className={`nav-item ${view === 'trash' ? "active-doc" : ""}`} 
+            onClick={() => { setView('trash'); setSearchTerm(''); }}>
             Trash
           </button>
           {view === 'active' && (
@@ -288,7 +223,7 @@ export default function Dashboard() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                     <span className="note-item-date">{note.date}</span>
                     {view === 'trash' && (
-                       <button onClick={(e) => restoreNote(e, note.id)} className="delete-icon-btn">↩️</button>
+                      <button onClick={(e) => restoreNote(e, note.id)} className="delete-icon-btn">↩️</button>
                     )}
                     <button onClick={(e) => handleDelete(e, note.id)} className="delete-icon-btn">
                       {view === 'trash' ? '❌' : '🗑️'}

@@ -1,13 +1,13 @@
 using Cognilink.core;
 using Cognilink.infrastructure;
 using Microsoft.EntityFrameworkCore;
-using System;
 
 namespace Cognilink.infrastructure.Services
 {
     public class ConceptProcessingOrchestrator
     {
         private readonly AppDbContext _context;
+        private readonly RelationshipDetectionService _relationshipService;
 
         private static readonly HashSet<string> StopWords = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -18,32 +18,32 @@ namespace Cognilink.infrastructure.Services
             "your","their","our","its","which","when","then","than","into"
         };
 
-        public ConceptProcessingOrchestrator(AppDbContext context)
+        public ConceptProcessingOrchestrator(AppDbContext context, 
+            RelationshipDetectionService relationshipService)
         {
             _context = context;
+            _relationshipService = relationshipService;
         }
 
         public async Task ProcessNoteAsync(Note note)
         {
-            // Split note content into words
             var words = note.Content
                 .ToLower()
                 .Split(new[] { ' ', '.', ',', '!', '?', '\n', '\r', ';', ':', '-', '(', ')' },
                        StringSplitOptions.RemoveEmptyEntries);
 
-            // Filter stop words, keep high-frequency keywords
             var keywords = words
                 .Where(w => w.Length > 3 && !StopWords.Contains(w))
                 .GroupBy(w => w)
-                .Where(g => g.Count() >= 2)
+                .Where(g => g.Count() >= 1)
                 .ToDictionary(g => g.Key, g => g.Count());
 
-            // Remove old concepts for this note (re-extraction on update)
+            // Remove old concepts and their relationships
             var oldConcepts = _context.Concepts.Where(c => c.NoteId == note.Id);
             var oldConceptIds = oldConcepts.Select(c => c.Id);
 
             var oldRelationships = _context.ConceptRelationships
-                .Where(cr => oldConceptIds.Contains(cr.SourceConceptId) || 
+                .Where(cr => oldConceptIds.Contains(cr.SourceConceptId) ||
                              oldConceptIds.Contains(cr.TargetConceptId));
 
             _context.ConceptRelationships.RemoveRange(oldRelationships);
@@ -62,8 +62,11 @@ namespace Cognilink.infrastructure.Services
             await _context.Concepts.AddRangeAsync(newConcepts);
             await _context.SaveChangesAsync();
 
-            // Detect relationships
-            await DetectRelationshipsAsync(note.Id, newConcepts, note.UserId);
+            // Step 1: Detect within-note relationships using similarity
+            await _relationshipService.DetectAndSaveRelationshipsAsync(newConcepts, note.UserId);
+
+            // Step 2: Detect cross-note relationships
+            await DetectCrossNoteRelationshipsAsync(note.Id, newConcepts, note.UserId);
         }
 
         public async Task RemoveNoteConceptsAsync(int noteId)
@@ -72,7 +75,7 @@ namespace Cognilink.infrastructure.Services
             var conceptIds = concepts.Select(c => c.Id);
 
             var relationships = _context.ConceptRelationships
-                .Where(cr => conceptIds.Contains(cr.SourceConceptId) || 
+                .Where(cr => conceptIds.Contains(cr.SourceConceptId) ||
                              conceptIds.Contains(cr.TargetConceptId));
 
             _context.ConceptRelationships.RemoveRange(relationships);
@@ -80,10 +83,11 @@ namespace Cognilink.infrastructure.Services
             await _context.SaveChangesAsync();
         }
 
-        private async Task DetectRelationshipsAsync(int noteId, List<Concept> newConcepts, int userId)
+        private async Task DetectCrossNoteRelationshipsAsync(
+            int noteId, List<Concept> newConcepts, int userId)
         {
             var otherConcepts = await _context.Concepts
-                .Where(c => c.NoteId != noteId)
+                .Where(c => c.NoteId != noteId && c.UserId == userId)
                 .ToListAsync();
 
             var toAdd = new List<ConceptRelationship>();
@@ -105,6 +109,7 @@ namespace Cognilink.infrastructure.Services
                                 SourceConceptId = concept.Id,
                                 TargetConceptId = other.Id,
                                 SimilarityScore = 1.0,
+                                IsManual = false,
                                 UserId = userId
                             });
                         }

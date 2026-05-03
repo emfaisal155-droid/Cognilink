@@ -39,6 +39,18 @@ Iteration 2 evolved the platform from a storage tool into an active intelligence
 - Interactive Knowledge Map: A dedicated "Concept View" using a custom Node-Link diagram to visualize the user's entire knowledge base.
 
 - At-a-Glance Analytics: Dashboard expansion featuring real-time statistics (Total Nodes and Edges) and a feed of recently extracted term
+
+**Iteration 3: Interaction and System Refinement**
+
+Iteration 3 focused on transitioning the platform from an automated background processor into a fully interactive experience.
+
+- Interactive Knowledge Graph: Implementation of a dynamic, force-directed visualization that allows for zooming, panning, and dragging nodes to explore conceptual connections.
+
+- Enhanced Settings: Deployment of a integrated Sidebar menu logic, alongside a dedicated Settings page for user profile and preference management.
+
+- Manual Knowledge Refinement: Introduction of manual editing capabilities, allowing users to override automated logic by adding, editing, or deleting nodes and relationships directly.
+
+- Universal Search & Export: Integration of a global search bar to highlight graph concepts in real-time and an export feature to download the knowledge web as high-resolution PNG or JSON files.
   
 ## How to Run
 ### Backend 
@@ -47,31 +59,6 @@ Iteration 2 evolved the platform from a storage tool into an active intelligence
 3. Add connection string to appsettings.json
 4. Run 'Update-Data' in Package Manager Console
 5. Press Play to run the project
-
-### API Endpoints
-**Authentication:**
--POST /api/account/register-Register new user
--POST /api/account/login-Login with cerendentials
-
-**Notes:**
--POST /api/notes -Create a note
--GET /api/notes{username} -Get all notes
--PUT /api/notes/{id} -Update a note
--DELETE /api/notes/{id} - Delete a note
-
-#Security
--Passwords hashed using BCrypt
--Users can only access their own notes
--Unauthorized access returns error codes
-
-### Unit Tests
-6 tests written and passing:
--Register new user returns 200
--Dupliacte username returns 400
--Login correct password returns 200
--Login wrongs password returns 401
--Create note links to correct user
--Delete another user's note return 403
 
 ### Frontend
 ```

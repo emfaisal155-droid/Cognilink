@@ -48,7 +48,7 @@ Iteration 3 focused on transitioning the platform from an automated background p
 
 - Enhanced Settings: Deployment of a integrated Sidebar menu logic, alongside a dedicated Settings page for user profile and preference management.
 
-- Manual Knowledge Refinement: Introduction of manual editing capabilities, allowing users to override automated logic by adding, editing, or deleting nodes and relationships directly.
+- Manual Knowledge Refinement: Introduction of manual editing capabilities, allowing users to override automated logic by editing, or deleting nodes and relationships directly.
 
 - Universal Search & Export: Integration of a global search bar to highlight graph concepts in real-time and an export feature to download the knowledge web as high-resolution PNG or JSON files.
   

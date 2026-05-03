@@ -40,7 +40,7 @@ Iteration 2 evolved the platform from a storage tool into an active intelligence
 
 - At-a-Glance Analytics: Dashboard expansion featuring real-time statistics (Total Nodes and Edges) and a feed of recently extracted term
 
-**Iteration 3: Interaction and System Refinement**
+**Iteration 3: Interaction & System Refinement**
 
 Iteration 3 focused on transitioning the platform from an automated background processor into a fully interactive experience.
 

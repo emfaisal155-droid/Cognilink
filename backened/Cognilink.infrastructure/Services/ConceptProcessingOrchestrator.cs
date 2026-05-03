@@ -40,6 +40,13 @@ namespace Cognilink.infrastructure.Services
 
             // Remove old concepts for this note (re-extraction on update)
             var oldConcepts = _context.Concepts.Where(c => c.NoteId == note.Id);
+            var oldConceptIds = oldConcepts.Select(c => c.Id);
+
+            var oldRelationships = _context.ConceptRelationships
+                .Where(cr => oldConceptIds.Contains(cr.SourceConceptId) || 
+                             oldConceptIds.Contains(cr.TargetConceptId));
+
+            _context.ConceptRelationships.RemoveRange(oldRelationships);
             _context.Concepts.RemoveRange(oldConcepts);
             await _context.SaveChangesAsync();
 
@@ -62,6 +69,13 @@ namespace Cognilink.infrastructure.Services
         public async Task RemoveNoteConceptsAsync(int noteId)
         {
             var concepts = _context.Concepts.Where(c => c.NoteId == noteId);
+            var conceptIds = concepts.Select(c => c.Id);
+
+            var relationships = _context.ConceptRelationships
+                .Where(cr => conceptIds.Contains(cr.SourceConceptId) || 
+                             conceptIds.Contains(cr.TargetConceptId));
+
+            _context.ConceptRelationships.RemoveRange(relationships);
             _context.Concepts.RemoveRange(concepts);
             await _context.SaveChangesAsync();
         }
